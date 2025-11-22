@@ -1,0 +1,39 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Explicitly declare text files
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+
+# Documents
+*.pdf binary
+*.doc binary
+*.docx binary
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+
+# Fonts
+*.ttf binary
+*.woff binary
+*.woff2 binary
