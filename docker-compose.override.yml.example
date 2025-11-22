@@ -1,0 +1,72 @@
+# docker-compose.override.yml.example
+#
+# This file demonstrates how to customize the Docker Compose setup.
+# Copy this file to 'docker-compose.override.yml' to use it.
+#
+# cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# Note: docker-compose.override.yml is ignored by git (see .gitignore)
+
+version: '3.8'
+
+services:
+  # Example: Customize backend service
+  backend:
+    # Override the command to use a different port or enable debug mode
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+
+    # Add additional environment variables
+    environment:
+      - DEBUG=True
+      - LOG_LEVEL=DEBUG
+
+    # Mount additional volumes
+    # volumes:
+    #   - ./custom_models:/app/custom_models
+
+  # Example: Enable GPU support for Ollama
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Example: Add PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: adaptive-lms-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - adaptive-lms-network
+    depends_on:
+      - postgres
+
+  # Example: Add Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: adaptive-lms-redis-commander
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - adaptive-lms-network
+    depends_on:
+      - redis
+
+# Add volumes for additional services
+volumes:
+  pgadmin_data:
+    driver: local
