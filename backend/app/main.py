@@ -43,7 +43,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-app.include_router(user_profiles.router, prefix="/api/v1/profiles", tags=["user-profiles"])
+app.include_router(user_profiles.router, prefix="/api/v1/user-profiles", tags=["user-profiles"])
 app.include_router(dialogs.router, prefix="/api/v1/dialogs", tags=["dialogs"])
 app.include_router(messages.router, prefix="/api/v1/messages", tags=["messages"])
 app.include_router(content.router, prefix="/api/v1/content", tags=["content"])

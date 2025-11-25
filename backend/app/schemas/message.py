@@ -20,6 +20,7 @@ class MessageCreate(MessageBase):
     """Schema for creating a message"""
     dialog_id: int
     sender_type: str  # 'user' or 'system'
+    extra_data: Optional[Dict[str, Any]] = {}
 
     @field_validator('sender_type')
     @classmethod

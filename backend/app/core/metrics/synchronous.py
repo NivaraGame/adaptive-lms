@@ -203,6 +203,16 @@ def extract_message_data(
         "attempts": message_dict.get("extra_data", {}).get("attempts", 1),
     }
 
+    # Check if content_delivery_time is in extra_data (preferred method)
+    extra_data = message_dict.get("extra_data", {})
+    if "content_delivery_time" in extra_data:
+        # Parse datetime string if needed
+        delivery_time = extra_data["content_delivery_time"]
+        if isinstance(delivery_time, str):
+            from datetime import datetime
+            delivery_time = datetime.fromisoformat(delivery_time.replace('Z', '+00:00'))
+        extracted["content_delivery_time"] = delivery_time
+
     # Extract content data if provided
     # ContentItem model fields: content_id, title, topic, difficulty_level, format,
     # content_data, reference_answer (JSONB), hints, explanations, etc.
@@ -211,11 +221,14 @@ def extract_message_data(
             # reference_answer is JSONB, could contain the answer
             extracted["correct_answer"] = content.reference_answer
             extracted["topic"] = getattr(content, "topic", None)
-            extracted["content_delivery_time"] = message_dict.get("timestamp")  # Use message timestamp as proxy
+            # Only use message timestamp as fallback if not already set
+            if "content_delivery_time" not in extracted:
+                extracted["content_delivery_time"] = message_dict.get("timestamp")
         else:
             extracted["correct_answer"] = content.get("reference_answer") or content.get("correct_answer")
             extracted["topic"] = content.get("topic")
-            extracted["content_delivery_time"] = content.get("created_at")
+            if "content_delivery_time" not in extracted:
+                extracted["content_delivery_time"] = content.get("created_at")
 
     # Extract dialog messages for follow-up count
     if dialog_messages:
