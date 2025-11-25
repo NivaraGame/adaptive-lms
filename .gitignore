@@ -241,3 +241,4 @@ service-account*.json
 *.rar
 
 docs/claude
+docs/weeks
