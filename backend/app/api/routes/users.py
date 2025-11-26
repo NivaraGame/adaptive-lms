@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from passlib.context import CryptContext
-from app.core.metrics import create_user_profile_if_missing
+from app.services import user_service
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -46,10 +46,10 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
 
-    # Auto-create user profile
+    # Auto-create user profile using the service
     try:
         logger.info(f"Creating user profile for new user_id={db_user.user_id}")
-        create_user_profile_if_missing(db_user.user_id, db)
+        user_service.create_user_profile(db_user.user_id, db)
         logger.info(f"User profile created successfully for user_id={db_user.user_id}")
     except Exception as e:
         logger.error(f"Error creating user profile for user_id={db_user.user_id}: {str(e)}")

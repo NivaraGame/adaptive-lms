@@ -1,12 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from app.config import settings
 from app.db.session import engine
 from app.models import Base
 from app.api.routes import dialogs, messages, users, content, recommendations, metrics, user_profiles, experiments
 
+import logging
+
+# Create logs directory if it doesn't exist
+log_dir = Path('logs')
+log_dir.mkdir(exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/app.log'),
+        logging.StreamHandler()
+    ]
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
