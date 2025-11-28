@@ -10,13 +10,15 @@ Run with: python test_metrics.py
 """
 
 import sys
+import uuid
+import time
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 
-# Add app directory to path
-sys.path.insert(0, str(Path(__file__).parent / "app"))
+# Add parent directory to path so we can import app module
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.config import settings
 from app.db.session import Base
@@ -105,10 +107,14 @@ class TestMetrics:
         self.db = self.SessionLocal()
         print_success("Database session created")
 
-        # Create test user
+        # Create test user with unique identifiers
+        unique_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        username = f"test_user_{unique_id}"
+        email = f"{username}@example.com"
+
         self.test_user = User(
-            username=f"test_user_{datetime.utcnow().timestamp()}",
-            email=f"test_{datetime.utcnow().timestamp()}@example.com",
+            username=username,
+            email=email,
             hashed_password="test_hash"
         )
         self.db.add(self.test_user)
@@ -128,9 +134,9 @@ class TestMetrics:
         self.db.refresh(self.test_profile)
         print_success(f"User profile created (ID: {self.test_profile.profile_id})")
 
-        # Create test content
+        # Create test content with unique title
         self.test_content = ContentItem(
-            title="Sample Algebra Question",
+            title=f"Sample Algebra Question {uuid.uuid4().hex[:6]}",
             topic="algebra",
             subtopic="linear_equations",
             difficulty_level="normal",

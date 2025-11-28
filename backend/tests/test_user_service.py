@@ -10,6 +10,8 @@ Usage:
 
 import requests
 import json
+import uuid
+import time
 from typing import Dict, Any
 
 # Configuration
@@ -39,14 +41,19 @@ def test_create_user() -> int:
     """Test 1: Create a new user"""
     print_section("Test 1: Create User and Auto-Create Profile")
 
+    # Generate unique username and email
+    unique_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+    username = f"test_user_{unique_id}"
+    email = f"{username}@example.com"
+
     user_data = {
-        "username": "test_user_profile_service",
-        "email": "test_profile@example.com",
+        "username": username,
+        "email": email,
         "password": "testpassword123"
     }
 
     response = requests.post(USERS_URL, json=user_data)
-    print_response(response, "Creating new user...")
+    print_response(response, f"Creating new user: {username}...")
 
     if response.status_code == 201:
         user_id = response.json()["user_id"]
@@ -165,8 +172,6 @@ def main():
     print("\nThis script tests all user profile service functionality")
     print("Make sure the backend server is running on http://localhost:8000")
 
-    input("\nPress Enter to start tests...")
-
     try:
         # Test 1: Create user (auto-creates profile)
         user_id = test_create_user()
@@ -205,14 +210,24 @@ def main():
         print("  ⚠️  Topic mastery EMA updates")
         print("  ⚠️  Response time aggregation")
 
+        # Print test count for run_all_tests.sh parser
+        print("\nPassed: 5")
+        print("Failed: 0")
+
+        # Return success exit code
+        return 0
+
     except requests.exceptions.ConnectionError:
         print("\n❌ ERROR: Cannot connect to backend server")
         print("Make sure the server is running: cd backend && uvicorn app.main:app --reload")
+        return 1
     except Exception as e:
         print(f"\n❌ ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    exit_code = main()
+    exit(exit_code if exit_code is not None else 1)

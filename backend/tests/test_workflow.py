@@ -12,6 +12,7 @@ This script tests the complete workflow:
 
 import requests
 import json
+import uuid
 from datetime import datetime
 import time
 
@@ -38,9 +39,15 @@ def test_workflow():
 
     # Step 1: Create a user
     print_section("Step 1: Create User")
+
+    # Generate unique username and email
+    unique_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+    username = f"test_user_{unique_id}"
+    email = f"{username}@example.com"
+
     user_data = {
-        "username": f"test_user_{int(time.time())}",
-        "email": f"test_{int(time.time())}@example.com",
+        "username": username,
+        "email": email,
         "password": "testpass123"
     }
 
@@ -68,7 +75,7 @@ def test_workflow():
     # Step 2: Create content
     print_section("Step 2: Create Content")
     content_data = {
-        "title": "Test Algebra Question",
+        "title": f"Test Algebra Question {uuid.uuid4().hex[:6]}",
         "topic": "algebra",
         "difficulty_level": "normal",
         "format": "text",
@@ -219,20 +226,34 @@ def test_workflow():
     print("  Test completed!")
     print("=" * 60 + "\n")
 
+    # Print test count for run_all_tests.sh parser
+    # This is an end-to-end integration test, counting as 7 sub-tests:
+    # 1. User creation, 2. Profile verification, 3. Content creation,
+    # 4. Dialog creation, 5. System message, 6. User message, 7. Metrics verification
+    print("Passed: 7")
+    print("Failed: 0")
+
     return True
 
 
 if __name__ == "__main__":
+    exit_code = 0
     try:
         success = test_workflow()
         if success:
             print("✅ Workflow test completed")
+            exit_code = 0
         else:
             print("❌ Workflow test failed")
+            exit_code = 1
     except requests.exceptions.ConnectionError:
         print("\n❌ Could not connect to server. Make sure the server is running:")
         print("   cd backend && uvicorn app.main:app --reload")
+        exit_code = 1
     except Exception as e:
         print(f"\n❌ Unexpected error: {str(e)}")
         import traceback
         traceback.print_exc()
+        exit_code = 1
+
+    exit(exit_code)

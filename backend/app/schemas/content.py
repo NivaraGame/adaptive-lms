@@ -105,3 +105,20 @@ class ContentItemResponse(ContentItemBase):
 
     class Config:
         from_attributes = True
+
+
+class PaginationMetadata(BaseModel):
+    """Pagination metadata schema"""
+    total: int
+    limit: int
+    offset: int
+    total_pages: int
+    current_page: int
+    has_next: bool
+    has_prev: bool
+
+
+class ContentListResponse(BaseModel):
+    """Response schema for paginated content list"""
+    items: List[ContentItemResponse]
+    pagination: PaginationMetadata
