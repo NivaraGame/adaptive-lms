@@ -242,3 +242,5 @@ service-account*.json
 
 docs/claude
 docs/weeks
+
+github_ssh_check.sh

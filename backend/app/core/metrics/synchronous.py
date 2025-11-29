@@ -213,6 +213,19 @@ def extract_message_data(
             delivery_time = datetime.fromisoformat(delivery_time.replace('Z', '+00:00'))
         extracted["content_delivery_time"] = delivery_time
 
+    # Extract topic from extra_data if available
+    if "topic" in extra_data:
+        extracted["topic"] = extra_data["topic"]
+
+    # Extract is_correct from extra_data if available (alternative to computing accuracy)
+    if "is_correct" in extra_data:
+        extracted["is_correct"] = extra_data["is_correct"]
+
+    # Extract response_time_ms from extra_data if available
+    if "response_time_ms" in extra_data:
+        # Convert milliseconds to seconds
+        extracted["response_time_seconds"] = extra_data["response_time_ms"] / 1000.0
+
     # Extract content data if provided
     # ContentItem model fields: content_id, title, topic, difficulty_level, format,
     # content_data, reference_answer (JSONB), hints, explanations, etc.
@@ -282,6 +295,10 @@ def compute_synchronous_metrics(
         >>> print(metrics["accuracy"], metrics["response_time"])
         1.0 30.0
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.debug(f"compute_synchronous_metrics called with message_data keys: {message_data.keys()}")
+
     metrics = {
         "user_id": message_data["user_id"],
         "dialog_id": message_data["dialog_id"],
@@ -291,8 +308,12 @@ def compute_synchronous_metrics(
         "topic": message_data.get("topic"),  # Pass through topic if available
     }
 
-    # Compute accuracy (if correct answer is available)
-    if "correct_answer" in message_data and message_data["correct_answer"]:
+    # Compute accuracy
+    # First check if is_correct is directly provided in extra_data
+    if "is_correct" in message_data:
+        metrics["accuracy"] = 1.0 if message_data["is_correct"] else 0.0
+    # Otherwise compute from correct_answer if available
+    elif "correct_answer" in message_data and message_data["correct_answer"]:
         metrics["accuracy"] = compute_accuracy(
             message_data["user_answer"],
             message_data["correct_answer"],
@@ -302,8 +323,12 @@ def compute_synchronous_metrics(
         # If no correct answer available, assume manual grading needed
         metrics["accuracy"] = None
 
-    # Compute response time (if timestamps are available)
-    if "content_delivery_time" in message_data and message_data["content_delivery_time"]:
+    # Compute response time
+    # First check if response_time_seconds is directly provided
+    if "response_time_seconds" in message_data:
+        metrics["response_time"] = message_data["response_time_seconds"]
+    # Otherwise compute from timestamps if available
+    elif "content_delivery_time" in message_data and message_data["content_delivery_time"]:
         metrics["response_time"] = compute_response_time(
             message_data["content_delivery_time"],
             message_data["user_response_time"]
