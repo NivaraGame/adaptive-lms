@@ -192,6 +192,14 @@ run_python_test() {
             fi
         fi
 
+        # For recommendation flow test
+        if [[ "$test_name" == "test_recommendation_flow" ]]; then
+            if grep -q "ALL TESTS PASSED" "/tmp/${test_name}_output.log"; then
+                passed=$(grep "✓ PASS:" "/tmp/${test_name}_output.log" | wc -l || echo "4")
+                failed=0
+            fi
+        fi
+
         local total=$((passed + failed))
 
         print_success "$test_name completed: $passed/$total tests passed"
@@ -236,13 +244,21 @@ run_all_tests() {
         print_warning "Skipping test_api_integration.sh (server not running)"
     fi
 
+    # Week 3 Section 4: API Recommendation Endpoints Test
+    if [ -f "$TESTS_DIR/test_api_recommendations.sh" ] && [ "$SKIP_API_TESTS" != "true" ]; then
+        run_bash_test "$TESTS_DIR/test_api_recommendations.sh"
+    else
+        print_warning "Skipping test_api_recommendations.sh (server not running)"
+    fi
+
     # Run Python tests
     print_header "Python Test Suites"
 
-    # Test order: metrics -> user -> content -> workflow
+    # Test order: metrics -> user -> content -> recommendation -> workflow
     for test_file in "$TESTS_DIR"/test_metrics.py \
                      "$TESTS_DIR"/test_user_service.py \
                      "$TESTS_DIR"/test_content_service.py \
+                     "$TESTS_DIR"/test_recommendation_flow.py \
                      "$TESTS_DIR"/test_workflow.py; do
         if [ -f "$test_file" ]; then
             if [[ "$test_file" =~ (user_service|content_service|workflow) ]] && [ "$SKIP_API_TESTS" == "true" ]; then

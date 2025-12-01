@@ -12,6 +12,15 @@ This directory contains the comprehensive test suite for the Adaptive Learning M
   - Content endpoints (CRUD, filtering, pagination)
   - Error handling
 
+- **`test_api_recommendations.sh`** - Recommendation API endpoint tests (Week 3, Section 4)
+  - GET /api/v1/recommendations/strategy - Current adaptation strategy
+  - POST /api/v1/recommendations/next - Get personalized recommendations
+  - GET /api/v1/recommendations/history - Recommendation history
+  - Request validation and error handling
+  - Difficulty and format overrides
+  - Cold start behavior
+  - Non-existent user handling
+
 ### Python Tests
 - **`test_metrics.py`** - Metrics computation system tests (12 tests)
   - Accuracy computation (binary, case-insensitive, JSONB)
@@ -40,6 +49,12 @@ This directory contains the comprehensive test suite for the Adaptive Learning M
   - Topics list retrieval
   - Invalid filter validation
 
+- **`test_recommendation_flow.py`** - Recommendation engine integration tests (4 tests)
+  - AdaptationEngine initialization and strategy management
+  - RulesAdapter decision-making with sample data
+  - RecommendationService full flow (profile → metrics → content selection)
+  - API schema compatibility validation
+
 - **`test_workflow.py`** - End-to-end workflow test (1 comprehensive test)
   - Complete user learning journey
   - User → Content → Dialog → Messages → Metrics → Profile Updates
@@ -61,9 +76,13 @@ This master script will:
 
 ### Run Individual Tests
 
-#### Bash Test
+#### Bash Tests
 ```bash
+# API integration tests
 bash tests/test_api_integration.sh
+
+# Recommendation API tests (Week 3)
+bash tests/test_api_recommendations.sh
 ```
 
 #### Python Tests
@@ -76,6 +95,9 @@ python3 tests/test_user_service.py
 
 # Content service tests (requires Enter keypress)
 python3 tests/test_content_service.py
+
+# Recommendation flow tests (Week 3)
+python3 tests/test_recommendation_flow.py
 
 # End-to-end workflow test
 python3 tests/test_workflow.py
@@ -106,17 +128,19 @@ Key dependencies:
 
 ## 📊 Test Coverage
 
-### Total Test Count: 129 Tests
+### Total Test Count: 65+ Tests
 
 | Test Suite | Count | Coverage |
 |------------|-------|----------|
 | API Integration | 18 | API endpoints, HTTP handling, error cases |
+| API Recommendations | 12+ | Recommendation endpoints, validation, overrides, error handling |
 | Metrics System | 12 | Computation, persistence, aggregation |
 | User Service | 6 | CRUD operations, profile management |
 | Content Service | 12 | Filtering, pagination, navigation |
+| Recommendation Flow | 4 | Adaptation engine, strategy orchestration, content selection |
 | Workflow E2E | 1 | Complete user journey |
 
-### Pass Rate: 100% ✅
+### Pass Rate: 100% ✅ (when server is running)
 
 ## 🧪 Test Features
 
@@ -162,12 +186,14 @@ Individual Test Suites:
   ✓ test_metrics: 12/12
   ✓ test_content_service: 12/12
   ✓ test_user_service: 6/6
+  ✓ test_recommendation_flow: 4/4
   ✓ test_api_integration: 18/18
+  ✓ test_api_recommendations: 12/12
   ✓ test_workflow: 1/1
 
 Overall Statistics:
-  Total Tests:  49
-  Passed:       49
+  Total Tests:  65
+  Passed:       65
   Failed:       0
   Pass Rate:    100%
 
@@ -183,9 +209,11 @@ All test output is saved to `/tmp/`:
 ```bash
 # View specific test log
 cat /tmp/test_api_integration_output.log
+cat /tmp/test_api_recommendations_output.log
 cat /tmp/test_metrics_output.log
 cat /tmp/test_user_service_output.log
 cat /tmp/test_content_service_output.log
+cat /tmp/test_recommendation_flow_output.log
 cat /tmp/test_workflow_output.log
 ```
 
@@ -213,14 +241,16 @@ cat /tmp/test_workflow_output.log
 ```
 backend/
 ├── tests/
-│   ├── test_api_integration.sh    # Bash - API endpoints
-│   ├── test_metrics.py            # Python - Metrics system
-│   ├── test_user_service.py       # Python - User profiles
-│   ├── test_content_service.py    # Python - Content management
-│   ├── test_workflow.py           # Python - E2E workflow
-│   └── README.md                  # This file
-├── run_all_tests.sh               # Master test runner
-└── app/                           # Application code
+│   ├── test_api_integration.sh       # Bash - API endpoints
+│   ├── test_api_recommendations.sh   # Bash - Recommendation API (Week 3)
+│   ├── test_metrics.py               # Python - Metrics system
+│   ├── test_user_service.py          # Python - User profiles
+│   ├── test_content_service.py       # Python - Content management
+│   ├── test_recommendation_flow.py   # Python - Adaptation engine (Week 3)
+│   ├── test_workflow.py              # Python - E2E workflow
+│   └── README.md                     # This file
+├── run_all_tests.sh                  # Master test runner
+└── app/                              # Application code
 ```
 
 ### Test Dependencies
