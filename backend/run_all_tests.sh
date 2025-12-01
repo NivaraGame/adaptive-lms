@@ -126,7 +126,7 @@ run_bash_test() {
     # Run the test and capture output
     cd "$SCRIPT_DIR" || exit 1
 
-    if bash "$test_file" > "/tmp/${test_name}_output.log" 2>&1; then
+    if timeout 120 bash "$test_file" > "/tmp/${test_name}_output.log" 2>&1; then
         local exit_code=$?
 
         # Extract test results from output (strip ANSI codes first)

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Dict, Any, List, Optional
 
 
@@ -19,6 +19,30 @@ class RecommendationRequest(BaseModel):
         None,
         description="Optional format override (text/visual/video/interactive)"
     )
+
+    @field_validator('override_difficulty')
+    @classmethod
+    def validate_difficulty(cls, v):
+        """Validate that override_difficulty is one of the allowed values."""
+        if v is not None:
+            allowed_difficulties = ['easy', 'normal', 'hard', 'challenge']
+            if v not in allowed_difficulties:
+                raise ValueError(
+                    f"override_difficulty must be one of {allowed_difficulties}, got '{v}'"
+                )
+        return v
+
+    @field_validator('override_format')
+    @classmethod
+    def validate_format(cls, v):
+        """Validate that override_format is one of the allowed values."""
+        if v is not None:
+            allowed_formats = ['text', 'visual', 'video', 'interactive']
+            if v not in allowed_formats:
+                raise ValueError(
+                    f"override_format must be one of {allowed_formats}, got '{v}'"
+                )
+        return v
 
     class Config:
         json_schema_extra = {

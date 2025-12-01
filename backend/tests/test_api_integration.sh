@@ -183,7 +183,7 @@ MESSAGE_RESPONSE_2=$(curl -sL -X POST "$BASE_URL/messages" \
         }
     }")
 
-MESSAGE_ID_2=$(extract_json_field "$MESSAGE_RESPONSE_2" "message_id")
+MESSAGE_ID_2=$(echo "$MESSAGE_RESPONSE_2" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('message_id') or data.get('message', {}).get('message_id', ''))" 2>/dev/null)
 if [ ! -z "$MESSAGE_ID_2" ] && [ "$MESSAGE_ID_2" != "null" ]; then
     print_result 0 "Message created via flat route with ID: $MESSAGE_ID_2"
     PASSED_TESTS=$((PASSED_TESTS+1))

@@ -32,10 +32,10 @@ print_result() {
     local status=$2
     if [ "$status" -eq 0 ]; then
         echo -e "${GREEN}✓ PASS${NC}: $test_name"
-        ((TESTS_PASSED++))
+        TESTS_PASSED=$((TESTS_PASSED + 1))
     else
         echo -e "${RED}✗ FAIL${NC}: $test_name"
-        ((TESTS_FAILED++))
+        TESTS_FAILED=$((TESTS_FAILED + 1))
     fi
 }
 
@@ -56,11 +56,11 @@ test_endpoint() {
     fi
 
     if [ "$method" = "POST" ]; then
-        response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL$endpoint" \
+        response=$(curl --max-time 30 -s -w "\n%{http_code}" -X POST "$BASE_URL$endpoint" \
             -H "Content-Type: application/json" \
             -d "$data" 2>&1)
     else
-        response=$(curl -s -w "\n%{http_code}" "$BASE_URL$endpoint" 2>&1)
+        response=$(curl --max-time 30 -s -w "\n%{http_code}" "$BASE_URL$endpoint" 2>&1)
     fi
 
     # Extract HTTP status code (last line)
@@ -70,7 +70,7 @@ test_endpoint() {
 
     echo "HTTP Status: $http_code (expected: $expected_status)"
     echo "Response:"
-    echo "$body" | python3 -m json.tool 2>/dev/null || echo "$body"
+    echo "$body" | timeout 5 python3 -m json.tool 2>/dev/null || echo "$body"
 
     if [ "$http_code" -eq "$expected_status" ]; then
         print_result "$test_name" 0
@@ -130,13 +130,10 @@ test_endpoint "POST" "/recommendations/next" \
     '{"dialog_id": 1}' 422 \
     "Invalid request - missing user_id (validation error)"
 
-# Test 2.8: Invalid request - invalid difficulty value (should return 422 or process normally)
-echo ""
-echo -e "${YELLOW}Note:${NC} Testing with invalid override value"
+# Test 2.8: Invalid request - invalid difficulty value (should return 422 validation error)
 test_endpoint "POST" "/recommendations/next" \
-    '{"user_id": 1, "override_difficulty": "super_hard"}' 200 \
-    "Request with invalid difficulty override (should handle gracefully)" || \
-    echo -e "${YELLOW}  (Override may be ignored or validated)${NC}"
+    '{"user_id": 1, "override_difficulty": "super_hard"}' 422 \
+    "Invalid difficulty override (validation error)"
 
 echo ""
 echo ""

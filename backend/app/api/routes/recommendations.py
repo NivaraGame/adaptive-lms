@@ -85,6 +85,37 @@ logger = logging.getLogger(__name__)
                 }
             }
         },
+        422: {
+            "description": "Validation error - invalid input parameters",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "invalid_difficulty": {
+                            "summary": "Invalid Difficulty Override",
+                            "value": {
+                                "detail": [{
+                                    "type": "value_error",
+                                    "loc": ["body", "override_difficulty"],
+                                    "msg": "Value error, override_difficulty must be one of ['easy', 'normal', 'hard', 'challenge'], got 'super_hard'",
+                                    "input": "super_hard"
+                                }]
+                            }
+                        },
+                        "invalid_format": {
+                            "summary": "Invalid Format Override",
+                            "value": {
+                                "detail": [{
+                                    "type": "value_error",
+                                    "loc": ["body", "override_format"],
+                                    "msg": "Value error, override_format must be one of ['text', 'visual', 'video', 'interactive'], got 'audio'",
+                                    "input": "audio"
+                                }]
+                            }
+                        }
+                    }
+                }
+            }
+        },
         500: {
             "description": "Internal server error or adaptation engine failure",
             "content": {

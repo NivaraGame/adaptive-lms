@@ -134,8 +134,13 @@ def test_workflow():
         return False
 
     system_message = response.json()
-    content_delivery_time = system_message["timestamp"]
-    print_result("✅ System message created", system_message)
+    # Handle both old format (direct fields) and new format (nested under 'message')
+    if "message" in system_message:
+        content_delivery_time = system_message["message"]["timestamp"]
+        print_result("✅ System message created", system_message["message"])
+    else:
+        content_delivery_time = system_message["timestamp"]
+        print_result("✅ System message created", system_message)
 
     # Wait 2 seconds to simulate user thinking
     print("\n⏳ Simulating user response time (2 seconds)...")
@@ -160,8 +165,13 @@ def test_workflow():
         return False
 
     user_message = response.json()
-    message_id = user_message["message_id"]
-    print_result("✅ User message created (metrics workflow triggered)", user_message)
+    # Handle both old format (direct fields) and new format (nested under 'message')
+    if "message" in user_message:
+        message_id = user_message["message"]["message_id"]
+        print_result("✅ User message created (metrics workflow triggered)", user_message["message"])
+    else:
+        message_id = user_message["message_id"]
+        print_result("✅ User message created (metrics workflow triggered)", user_message)
 
     # Wait for workflow to complete
     print("\n⏳ Waiting for metrics workflow to complete (1 second)...")

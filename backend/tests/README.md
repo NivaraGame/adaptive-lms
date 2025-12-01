@@ -16,8 +16,9 @@ This directory contains the comprehensive test suite for the Adaptive Learning M
   - GET /api/v1/recommendations/strategy - Current adaptation strategy
   - POST /api/v1/recommendations/next - Get personalized recommendations
   - GET /api/v1/recommendations/history - Recommendation history
-  - Request validation and error handling
-  - Difficulty and format overrides
+  - Request validation and error handling (422 for invalid parameters)
+  - Difficulty and format overrides (with validation)
+  - Valid values: difficulty=['easy','normal','hard','challenge'], format=['text','visual','video','interactive']
   - Cold start behavior
   - Non-existent user handling
 
