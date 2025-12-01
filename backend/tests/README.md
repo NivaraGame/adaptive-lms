@@ -59,6 +59,16 @@ This directory contains the comprehensive test suite for the Adaptive Learning M
   - Complete user learning journey
   - User → Content → Dialog → Messages → Metrics → Profile Updates
 
+- **`test_workflow_manual.py`** - Full Workflow Integration Tests (Week 3, Section 5)
+  - Complete adaptive learning loop end-to-end testing
+  - High-performing user scenario (difficulty increases)
+  - Cold start user scenario (new user, no history)
+  - Full workflow with automatic recommendations
+  - Multiple iterations with adaptive behavior
+  - Transaction consistency verification
+  - Workflow logging and metadata validation
+  - Requires running API server with populated content database
+
 ## 🚀 Running Tests
 
 ### Run All Tests
@@ -101,6 +111,9 @@ python3 tests/test_recommendation_flow.py
 
 # End-to-end workflow test
 python3 tests/test_workflow.py
+
+# Full workflow integration test (Week 3, Section 5)
+python3 tests/test_workflow_manual.py
 ```
 
 ## 📋 Prerequisites
@@ -128,7 +141,7 @@ Key dependencies:
 
 ## 📊 Test Coverage
 
-### Total Test Count: 65+ Tests
+### Total Test Count: 69+ Tests
 
 | Test Suite | Count | Coverage |
 |------------|-------|----------|
@@ -139,6 +152,7 @@ Key dependencies:
 | Content Service | 12 | Filtering, pagination, navigation |
 | Recommendation Flow | 4 | Adaptation engine, strategy orchestration, content selection |
 | Workflow E2E | 1 | Complete user journey |
+| Workflow Integration | 4 | Full adaptive learning loop, multiple scenarios (Week 3) |
 
 ### Pass Rate: 100% ✅ (when server is running)
 
@@ -248,6 +262,7 @@ backend/
 │   ├── test_content_service.py       # Python - Content management
 │   ├── test_recommendation_flow.py   # Python - Adaptation engine (Week 3)
 │   ├── test_workflow.py              # Python - E2E workflow
+│   ├── test_workflow_manual.py       # Python - Full workflow integration (Week 3, Sec 5)
 │   └── README.md                     # This file
 ├── run_all_tests.sh                  # Master test runner
 └── app/                              # Application code

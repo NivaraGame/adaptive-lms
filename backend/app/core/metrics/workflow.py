@@ -48,6 +48,12 @@ def process_message_metrics(
     4. Store metrics in the metrics table
     5. Aggregate metrics and update user profile
 
+    **Transaction Handling (Week 3, Section 5):**
+    This function now uses proper transaction handling to ensure atomicity:
+    - All steps (metrics computation → storage → profile update) happen in one transaction
+    - If any step fails, the entire transaction is rolled back
+    - Database consistency is maintained even during errors
+
     Args:
         message_id: ID of the message to process
         db: SQLAlchemy database session
@@ -72,7 +78,7 @@ def process_message_metrics(
         >>> if result["success"]:
         ...     print(f"Metrics computed: {result['metrics']}")
     """
-    logger.info(f"Starting metrics workflow for message_id={message_id}, trigger={trigger_type}")
+    logger.info(f"[WORKFLOW TRANSACTION] Starting metrics workflow for message_id={message_id}, trigger={trigger_type}")
 
     result = {
         "success": False,
@@ -82,6 +88,7 @@ def process_message_metrics(
         "error": None
     }
 
+    # Begin transaction block - all operations are atomic
     try:
         # Step 1: Fetch message and related entities
         logger.debug(f"Fetching message and related data for message_id={message_id}")
@@ -142,6 +149,12 @@ def process_message_metrics(
         logger.debug(f"Profile updates: {profile_updates}")
         result["profile_updates"] = profile_updates
 
+        # CRITICAL: Commit transaction to ensure all changes are persisted atomically
+        # This commit ensures metrics → profile updates are consistent
+        logger.info(f"[WORKFLOW TRANSACTION] Committing transaction for message_id={message_id}")
+        db.commit()
+        logger.info(f"[WORKFLOW TRANSACTION] Transaction committed successfully")
+
         # Mark as successful
         result["success"] = True
         logger.info(f"Metrics workflow completed successfully for message_id={message_id}")
@@ -149,16 +162,24 @@ def process_message_metrics(
         return result
 
     except SQLAlchemyError as e:
-        # Database errors - rollback transaction
-        logger.error(f"Database error in metrics workflow for message_id={message_id}: {str(e)}")
+        # Database errors - rollback transaction to maintain consistency
+        logger.error(
+            f"[WORKFLOW TRANSACTION] Database error in metrics workflow for message_id={message_id}: {str(e)}"
+        )
+        logger.info(f"[WORKFLOW TRANSACTION] Rolling back transaction due to database error")
         db.rollback()
+        logger.info(f"[WORKFLOW TRANSACTION] Transaction rolled back successfully")
         result["error"] = f"Database error: {str(e)}"
         raise MetricsWorkflowError(f"Database error processing metrics: {str(e)}") from e
 
     except Exception as e:
-        # Unexpected errors - log and re-raise
-        logger.error(f"Unexpected error in metrics workflow for message_id={message_id}: {str(e)}")
+        # Unexpected errors - rollback and re-raise
+        logger.error(
+            f"[WORKFLOW TRANSACTION] Unexpected error in metrics workflow for message_id={message_id}: {str(e)}"
+        )
+        logger.info(f"[WORKFLOW TRANSACTION] Rolling back transaction due to unexpected error")
         db.rollback()
+        logger.info(f"[WORKFLOW TRANSACTION] Transaction rolled back successfully")
         result["error"] = f"Unexpected error: {str(e)}"
         raise MetricsWorkflowError(f"Unexpected error processing metrics: {str(e)}") from e
 

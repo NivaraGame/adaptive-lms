@@ -268,6 +268,15 @@ run_all_tests() {
             fi
         fi
     done
+
+    # Week 3 Section 5: Full Workflow Integration Test (manual)
+    if [ -f "$TESTS_DIR/test_workflow_manual.py" ] && [ "$SKIP_API_TESTS" != "true" ]; then
+        print_section "Running: Full Workflow Integration (Manual)"
+        print_info "This test requires a running server with populated database"
+        run_python_test "$TESTS_DIR/test_workflow_manual.py"
+    else
+        print_warning "Skipping test_workflow_manual.py (server not running)"
+    fi
 }
 
 ##############################################################################
