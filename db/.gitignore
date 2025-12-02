@@ -1,0 +1,30 @@
+# =============================================================================
+# DATABASE .GITIGNORE - Database files and data
+# =============================================================================
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Database dumps and backups
+*.dump
+*.sql.backup
+*.sql.gz
+*.pgdump
+
+# PostgreSQL data directories
+data/
+postgres_data/
+pgdata/
+
+# Redis data
+dump.rdb
+*.rdb
+redis_data/
+
+# Ollama data (if stored here)
+ollama_data/

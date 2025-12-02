@@ -1,0 +1,105 @@
+# =============================================================================
+# BACKEND .GITIGNORE - Python/FastAPI specific patterns
+# =============================================================================
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Python IDE
+.spyderproject
+.spyproject
+.ropeproject
+*.sage.py
+
+# Type checking / linting
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+pyrightconfig.json
+.pyright/
+
+# Testing / Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage/
+*.cover
+*.py,cover
+.hypothesis/
+cover/
+test-results/
+.benchmarks/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Database migrations
+app/alembic.ini
+alembic.ini
+
+# FastAPI / Uvicorn
+.uvicorn/
+*.pid
+
+# Celery
+celerybeat-schedule
+celerybeat-schedule.db
+celerybeat.pid
+
+# ML / Models (if any)
+*.h5
+*.pkl
+*.pickle
+*.joblib
+*.model
+models/*.bin
+*.gguf
+
+# Uploaded files
+media/
+uploads/
+user_uploads/
+
+# Static files
+staticfiles/
+static_root/
+collected_static/
