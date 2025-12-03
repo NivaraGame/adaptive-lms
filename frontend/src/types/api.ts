@@ -27,7 +27,7 @@ export interface ApiError {
   message: string;
   status: number;
   code?: string;
-  details?: Record<string, any>;
+  details?: Record<string, any> | string;
 }
 
 /**
