@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import api from '../services/api';
+import {
+  createDialog,
+  getDialog,
+  listUserDialogs,
+  getDialogMessages,
+  sendMessage,
+  endDialog,
+} from '../services/dialogService';
+import type { DialogType } from '../types/dialog';
 import type { ApiError } from '../types/api';
 
 /**
- * API Test Component
+ * Dialog Service Test Component
  *
- * This component tests the API client by making requests to the backend.
- * It verifies:
- * - Successful API calls
- * - Error handling
- * - CORS configuration
- * - Request/response interceptors
- *
- * This is a temporary component for testing purposes and can be removed
- * once the API integration is verified.
+ * This component provides a UI to test all dialog service functions.
+ * Used for development and integration testing.
  */
+
 /**
  * Format JSON with syntax highlighting
  */
@@ -118,72 +120,78 @@ const formatJSON = (data: any): React.ReactElement => {
   return <>{highlighted}</>;
 };
 
-export default function ApiTest() {
-  const [loading, setLoading] = useState(false);
+export default function DialogServiceTest() {
+  const [userId, setUserId] = useState<number>(1);
+  const [dialogId, setDialogId] = useState<number>(1);
+  const [dialogType, setDialogType] = useState<DialogType>('educational');
+  const [topic, setTopic] = useState<string>('Python basics');
+  const [messageContent, setMessageContent] = useState<string>('What is a variable?');
+  const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<ApiError | null>(null);
 
-  /**
-   * Test fetching content from the backend
-   */
-  const testGetContent = async () => {
+  const executeTest = async (testFn: () => Promise<any>, operationName: string) => {
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const response = await api.get('/api/v1/content', {
-        params: {
-          limit: 5,
-        },
-      });
-      setResult(response);
-      console.log('✅ API Test Success:', response);
+      const data = await testFn();
+      setResult(data);
+      console.log(`✅ ${operationName} Success:`, data);
     } catch (err) {
       setError(err as ApiError);
-      console.error('❌ API Test Failed:', err);
+      console.error(`❌ ${operationName} Failed:`, err);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Test fetching topics from the backend
-   */
-  const testGetTopics = async () => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const response = await api.get('/api/v1/content/topics');
-      setResult(response);
-      console.log('✅ API Test Success:', response);
-    } catch (err) {
-      setError(err as ApiError);
-      console.error('❌ API Test Failed:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleCreateDialog = () => {
+    executeTest(
+      () => createDialog(userId, dialogType, topic),
+      'Create Dialog'
+    ).then(() => {
+      // Auto-update dialog ID from result if successful
+      if (result && result.dialog_id) {
+        setDialogId(result.dialog_id);
+      }
+    });
   };
 
-  /**
-   * Test error handling with invalid endpoint
-   */
-  const testErrorHandling = async () => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
+  const handleGetDialog = () => {
+    executeTest(
+      () => getDialog(dialogId),
+      'Get Dialog'
+    );
+  };
 
-    try {
-      await api.get('/api/v1/invalid-endpoint');
-      setResult({ message: 'Unexpected success' });
-    } catch (err) {
-      setError(err as ApiError);
-      console.log('✅ Error handling works correctly:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleListUserDialogs = () => {
+    executeTest(
+      () => listUserDialogs(userId, 0, 10),
+      'List User Dialogs'
+    );
+  };
+
+  const handleGetDialogMessages = () => {
+    executeTest(
+      () => getDialogMessages(dialogId),
+      'Get Dialog Messages'
+    );
+  };
+
+  const handleSendMessage = () => {
+    executeTest(
+      () => sendMessage(dialogId, messageContent, 'user', false),
+      'Send Message'
+    );
+  };
+
+  const handleEndDialog = () => {
+    executeTest(
+      () => endDialog(dialogId),
+      'End Dialog'
+    );
   };
 
   return (
@@ -201,17 +209,166 @@ export default function ApiTest() {
           marginBottom: '0.5rem',
           color: '#213547'
         }}>
-          API Client Test
+          Dialog Service Test
         </h1>
         <p style={{
           fontSize: '1rem',
           color: '#646cff',
           margin: 0
         }}>
-          Verify frontend-backend connectivity and API client functionality
+          Test dialog management and message operations
         </p>
       </div>
 
+      {/* Configuration Panel */}
+      <div style={{
+        padding: '1.25rem',
+        backgroundColor: 'rgba(249, 250, 251, 0.8)',
+        border: '1px solid rgba(0, 0, 0, 0.1)',
+        borderRadius: '8px',
+        marginBottom: '1.5rem'
+      }}>
+        <h3 style={{
+          margin: '0 0 1rem 0',
+          fontSize: '1.1rem',
+          fontWeight: '600',
+          color: '#213547'
+        }}>
+          ⚙️ Configuration
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1rem'
+        }}>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.375rem',
+              color: '#374151'
+            }}>
+              User ID
+            </label>
+            <input
+              type="number"
+              value={userId}
+              onChange={(e) => setUserId(Number(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid rgba(0, 0, 0, 0.2)',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.375rem',
+              color: '#374151'
+            }}>
+              Dialog ID
+            </label>
+            <input
+              type="number"
+              value={dialogId}
+              onChange={(e) => setDialogId(Number(e.target.value))}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid rgba(0, 0, 0, 0.2)',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.375rem',
+              color: '#374151'
+            }}>
+              Dialog Type
+            </label>
+            <select
+              value={dialogType}
+              onChange={(e) => setDialogType(e.target.value as DialogType)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid rgba(0, 0, 0, 0.2)',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontFamily: 'inherit'
+              }}
+            >
+              <option value="educational">Educational</option>
+              <option value="test">Test</option>
+              <option value="assessment">Assessment</option>
+              <option value="reflective">Reflective</option>
+            </select>
+          </div>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.375rem',
+              color: '#374151'
+            }}>
+              Topic
+            </label>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid rgba(0, 0, 0, 0.2)',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.375rem',
+              color: '#374151'
+            }}>
+              Message Content
+            </label>
+            <input
+              type="text"
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid rgba(0, 0, 0, 0.2)',
+                borderRadius: '6px',
+                fontSize: '0.95rem',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Test Buttons */}
       <div style={{
         display: 'flex',
         gap: '0.75rem',
@@ -219,7 +376,32 @@ export default function ApiTest() {
         marginBottom: '1.5rem'
       }}>
         <button
-          onClick={testGetContent}
+          onClick={handleCreateDialog}
+          disabled={loading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            backgroundColor: loading ? '#94a3b8' : '#22c55e',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+            opacity: loading ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#16a34a';
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#22c55e';
+          }}
+        >
+          Create Dialog
+        </button>
+
+        <button
+          onClick={handleGetDialog}
           disabled={loading}
           style={{
             padding: '0.75rem 1.5rem',
@@ -240,11 +422,11 @@ export default function ApiTest() {
             if (!loading) e.currentTarget.style.backgroundColor = '#646cff';
           }}
         >
-          Test GET Content
+          Get Dialog
         </button>
 
         <button
-          onClick={testGetTopics}
+          onClick={handleListUserDialogs}
           disabled={loading}
           style={{
             padding: '0.75rem 1.5rem',
@@ -265,18 +447,18 @@ export default function ApiTest() {
             if (!loading) e.currentTarget.style.backgroundColor = '#646cff';
           }}
         >
-          Test GET Topics
+          List Dialogs
         </button>
 
         <button
-          onClick={testErrorHandling}
+          onClick={handleGetDialogMessages}
           disabled={loading}
           style={{
             padding: '0.75rem 1.5rem',
             fontSize: '1rem',
             fontWeight: '500',
             cursor: loading ? 'not-allowed' : 'pointer',
-            backgroundColor: loading ? '#94a3b8' : '#f59e0b',
+            backgroundColor: loading ? '#94a3b8' : '#646cff',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -284,16 +466,67 @@ export default function ApiTest() {
             opacity: loading ? 0.6 : 1,
           }}
           onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.backgroundColor = '#d97706';
+            if (!loading) e.currentTarget.style.backgroundColor = '#535bf2';
           }}
           onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.backgroundColor = '#f59e0b';
+            if (!loading) e.currentTarget.style.backgroundColor = '#646cff';
           }}
         >
-          Test Error Handling
+          Get Messages
+        </button>
+
+        <button
+          onClick={handleSendMessage}
+          disabled={loading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            backgroundColor: loading ? '#94a3b8' : '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+            opacity: loading ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#2563eb';
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#3b82f6';
+          }}
+        >
+          Send Message
+        </button>
+
+        <button
+          onClick={handleEndDialog}
+          disabled={loading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            backgroundColor: loading ? '#94a3b8' : '#ef4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            transition: 'all 0.2s',
+            opacity: loading ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#dc2626';
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) e.currentTarget.style.backgroundColor = '#ef4444';
+          }}
+        >
+          End Dialog
         </button>
       </div>
 
+      {/* Loading Indicator */}
       {loading && (
         <div style={{
           padding: '1rem',
@@ -308,6 +541,7 @@ export default function ApiTest() {
         </div>
       )}
 
+      {/* Error Display */}
       {error && (
         <div
           style={{
@@ -358,6 +592,7 @@ export default function ApiTest() {
         </div>
       )}
 
+      {/* Success Result Display */}
       {result && !error && (
         <div
           style={{
@@ -399,6 +634,7 @@ export default function ApiTest() {
         </div>
       )}
 
+      {/* Instructions */}
       <div style={{
         padding: '1.25rem',
         backgroundColor: 'rgba(249, 250, 251, 0.8)',
@@ -426,9 +662,12 @@ export default function ApiTest() {
             borderRadius: '4px',
             fontSize: '0.9rem'
           }}>http://localhost:8000</code></li>
-          <li>Click <strong>"Test GET Content"</strong> to fetch content items</li>
-          <li>Click <strong>"Test GET Topics"</strong> to fetch available topics</li>
-          <li>Click <strong>"Test Error Handling"</strong> to verify error interceptor works</li>
+          <li>Create a user first (user_id=1) if not exists</li>
+          <li>Click <strong>"Create Dialog"</strong> to start a new learning session</li>
+          <li>The dialog ID will auto-update after creation</li>
+          <li>Use <strong>"Send Message"</strong> to add messages to the dialog</li>
+          <li>Use <strong>"Get Messages"</strong> to retrieve all conversation history</li>
+          <li>Click <strong>"End Dialog"</strong> to close the session</li>
           <li>Check browser console <kbd style={{
             padding: '0.15rem 0.4rem',
             backgroundColor: '#213547',
@@ -436,7 +675,6 @@ export default function ApiTest() {
             borderRadius: '4px',
             fontSize: '0.85rem'
           }}>F12</kbd> for detailed request/response logs</li>
-          <li>Verify CORS is working (no CORS errors in console)</li>
         </ol>
       </div>
     </div>
