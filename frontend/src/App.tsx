@@ -1,31 +1,21 @@
-import './App.css'
-
-import ApiTest from './components/ApiTest'
-import DialogServiceTest from './components/DialogServiceTest'
-import ContentServiceTest from './components/ContentServiceTest'
-import UserServiceTest from './components/UserServiceTest'
-import RecommendationServiceTest from './components/RecommendationServiceTest'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navigation from './components/Navigation';
+import HomePage from './pages/HomePage';
+import LearningPage from './pages/LearningPage';
+import ProfilePage from './pages/ProfilePage';
+import './App.css';
 
 function App() {
   return (
-    <div style={{
-      padding: '2rem',
-      maxWidth: '900px',
-      margin: '0 auto',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      <UserServiceTest />
-      <hr />
-      <ContentServiceTest />
-      <hr />
-      <DialogServiceTest />
-      <hr />
-      <RecommendationServiceTest />
-      <hr />
-      <ApiTest />
-    </div>
-  )
+    <BrowserRouter>
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/learn" element={<LearningPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
