@@ -4,6 +4,7 @@ import ApiTest from './components/ApiTest'
 import DialogServiceTest from './components/DialogServiceTest'
 import ContentServiceTest from './components/ContentServiceTest'
 import UserServiceTest from './components/UserServiceTest'
+import RecommendationServiceTest from './components/RecommendationServiceTest'
 
 function App() {
   return (
@@ -19,6 +20,8 @@ function App() {
       <ContentServiceTest />
       <hr />
       <DialogServiceTest />
+      <hr />
+      <RecommendationServiceTest />
       <hr />
       <ApiTest />
     </div>

@@ -89,7 +89,7 @@ interface ButtonStyleOptions {
   hoverColor: string;
 }
 
-export const createButtonStyle = ({ loading, bgColor, hoverColor }: ButtonStyleOptions): CSSProperties => ({
+export const createButtonStyle = ({ loading, bgColor }: ButtonStyleOptions): CSSProperties => ({
   padding: `${spacing.md} ${spacing['2xl']}`,
   fontSize: fontSize.md,
   fontWeight: fontWeight.medium,
