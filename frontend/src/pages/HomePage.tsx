@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing, fontSize, fontWeight } from '../styles/designTokens';
+import QueryTest from '../components/QueryTest';
 
 const containerStyle: CSSProperties = {
   padding: spacing['3xl'],
@@ -197,6 +198,10 @@ function HomePage() {
           <li>Comprehensive topic mastery tracking</li>
           <li>Personalized learning pace</li>
         </ul>
+      </section>
+
+      <section style={{ ...featuresStyle, marginTop: spacing['2xl'] }}>
+        <QueryTest />
       </section>
     </div>
   );
