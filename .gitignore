@@ -78,3 +78,4 @@ github_ssh_check.sh
 # Internal documentation (not project docs)
 docs/claude
 docs/weeks
+docs/frontend_design_v2.md

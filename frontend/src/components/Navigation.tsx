@@ -1,49 +1,69 @@
 import type { CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../styles/designTokens';
-
-const navStyle: CSSProperties = {
-  backgroundColor: colors.textPrimary,
-  padding: `${spacing.lg} 0`,
-  marginBottom: spacing['3xl'],
-  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-};
-
-const navContainerStyle: CSSProperties = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: `0 ${spacing['3xl']}`,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-};
-
-const logoStyle: CSSProperties = {
-  fontSize: fontSize.xl,
-  fontWeight: fontWeight.bold,
-  color: 'white',
-  textDecoration: 'none',
-};
-
-const navLinksStyle: CSSProperties = {
-  display: 'flex',
-  gap: spacing.xl,
-  alignItems: 'center',
-};
-
-const createLinkStyle = (isActive: boolean): CSSProperties => ({
-  color: isActive ? colors.primary : 'rgba(255, 255, 255, 0.9)',
-  textDecoration: 'none',
-  fontSize: fontSize.base,
-  fontWeight: isActive ? fontWeight.semibold : fontWeight.medium,
-  padding: `${spacing.sm} ${spacing.lg}`,
-  borderRadius: borderRadius.md,
-  backgroundColor: isActive ? 'rgba(100, 108, 255, 0.2)' : 'transparent',
-  transition: 'all 0.2s',
-});
+import { useTheme } from '../contexts/ThemeContext';
+import { spacing, fontSize, fontWeight, borderRadius } from '../styles/designTokens';
 
 function Navigation() {
   const location = useLocation();
+  const { theme, colors, toggleTheme } = useTheme();
+
+  const navStyle: CSSProperties = {
+    backgroundColor: colors.bgSecondary,
+    padding: `${spacing.lg} 0`,
+    marginBottom: spacing['3xl'],
+    boxShadow: colors.shadowMd,
+    borderBottom: `1px solid ${colors.border}`,
+  };
+
+  const navContainerStyle: CSSProperties = {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: `0 ${spacing['3xl']}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+
+  const logoStyle: CSSProperties = {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    textDecoration: 'none',
+  };
+
+  const navLinksStyle: CSSProperties = {
+    display: 'flex',
+    gap: spacing.md,
+    alignItems: 'center',
+  };
+
+  const createLinkStyle = (isActive: boolean): CSSProperties => ({
+    color: isActive ? colors.primary : colors.textSecondary,
+    textDecoration: 'none',
+    fontSize: fontSize.base,
+    fontWeight: isActive ? fontWeight.semibold : fontWeight.medium,
+    padding: `${spacing.sm} ${spacing.lg}`,
+    borderRadius: borderRadius.md,
+    backgroundColor: isActive ? colors.primaryLight : 'transparent',
+    transition: 'all 0.2s',
+  });
+
+  const themeToggleStyle: CSSProperties = {
+    background: colors.bgTertiary,
+    border: `1px solid ${colors.border}`,
+    borderRadius: '12px',
+    padding: `${spacing.sm} ${spacing.md}`,
+    cursor: 'pointer',
+    fontSize: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+    marginLeft: spacing.md,
+  };
 
   return (
     <nav style={navStyle}>
@@ -57,7 +77,7 @@ function Navigation() {
             style={createLinkStyle(location.pathname === '/')}
             onMouseEnter={(e) => {
               if (location.pathname !== '/') {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.backgroundColor = colors.bgTertiary;
               }
             }}
             onMouseLeave={(e) => {
@@ -73,7 +93,7 @@ function Navigation() {
             style={createLinkStyle(location.pathname === '/learn')}
             onMouseEnter={(e) => {
               if (location.pathname !== '/learn') {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.backgroundColor = colors.bgTertiary;
               }
             }}
             onMouseLeave={(e) => {
@@ -89,7 +109,7 @@ function Navigation() {
             style={createLinkStyle(location.pathname === '/profile')}
             onMouseEnter={(e) => {
               if (location.pathname !== '/profile') {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.backgroundColor = colors.bgTertiary;
               }
             }}
             onMouseLeave={(e) => {
@@ -100,6 +120,21 @@ function Navigation() {
           >
             Profile
           </Link>
+          <button
+            onClick={toggleTheme}
+            style={themeToggleStyle}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = colors.shadowSm;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
         </div>
       </div>
     </nav>
