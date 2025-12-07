@@ -37,5 +37,3 @@
 *.ttf binary
 *.woff binary
 *.woff2 binary
-
-*text=auto eol=lf
