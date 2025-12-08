@@ -1,11 +1,28 @@
 import type { CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing, fontSize, fontWeight, borderRadius } from '../styles/designTokens';
+import { getDialogId, getSessionDuration } from '../utils/sessionStorage';
 
 function Navigation() {
   const location = useLocation();
   const { theme, colors, toggleTheme } = useTheme();
+  const [sessionDuration, setSessionDuration] = useState<number>(0);
+  const isLearning = location.pathname === '/learn';
+  const hasActiveSession = getDialogId() !== null;
+
+  // Update session duration every minute when on learning page
+  useEffect(() => {
+    if (isLearning && hasActiveSession) {
+      setSessionDuration(getSessionDuration());
+      const interval = setInterval(() => {
+        setSessionDuration(getSessionDuration());
+      }, 60000); // Update every minute
+
+      return () => clearInterval(interval);
+    }
+  }, [isLearning, hasActiveSession]);
 
   const navStyle: CSSProperties = {
     backgroundColor: colors.bgSecondary,
@@ -22,6 +39,8 @@ function Navigation() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.lg,
+    flexWrap: 'wrap',
   };
 
   const logoStyle: CSSProperties = {
@@ -38,6 +57,7 @@ function Navigation() {
     display: 'flex',
     gap: spacing.md,
     alignItems: 'center',
+    flexWrap: 'wrap',
   };
 
   const createLinkStyle = (isActive: boolean): CSSProperties => ({
@@ -48,7 +68,11 @@ function Navigation() {
     padding: `${spacing.sm} ${spacing.lg}`,
     borderRadius: borderRadius.md,
     backgroundColor: isActive ? colors.primaryLight : 'transparent',
+    borderBottom: isActive ? `2px solid ${colors.primary}` : '2px solid transparent',
     transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.xs,
   });
 
   const themeToggleStyle: CSSProperties = {
@@ -63,6 +87,28 @@ function Navigation() {
     justifyContent: 'center',
     transition: 'all 0.2s',
     marginLeft: spacing.md,
+  };
+
+  const sessionIndicatorStyle: CSSProperties = {
+    backgroundColor: colors.successLight,
+    color: colors.success,
+    padding: `${spacing.xs} ${spacing.md}`,
+    borderRadius: borderRadius.lg,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.xs,
+    border: `1px solid ${colors.success}`,
+  };
+
+  // Format session duration as "Xh Ym" or "Xm"
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 1) return '< 1m';
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
   };
 
   return (
@@ -85,8 +131,10 @@ function Navigation() {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
             }}
+            aria-label="Home"
           >
-            Home
+            <span aria-hidden="true">🏠</span>
+            <span>Home</span>
           </Link>
           <Link
             to="/learn"
@@ -101,8 +149,10 @@ function Navigation() {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
             }}
+            aria-label="Learn"
           >
-            Learn
+            <span aria-hidden="true">🎓</span>
+            <span>Learn</span>
           </Link>
           <Link
             to="/profile"
@@ -117,9 +167,17 @@ function Navigation() {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
             }}
+            aria-label="Profile"
           >
-            Profile
+            <span aria-hidden="true">👤</span>
+            <span>Profile</span>
           </Link>
+          {isLearning && hasActiveSession && (
+            <div style={sessionIndicatorStyle} aria-live="polite">
+              <span aria-hidden="true">⏱️</span>
+              <span>Session Active · {formatDuration(sessionDuration)}</span>
+            </div>
+          )}
           <button
             onClick={toggleTheme}
             style={themeToggleStyle}
