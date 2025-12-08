@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
+import json
 
 
 class Settings(BaseSettings):
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Adaptive LMS"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    ALLOWED_ORIGINS: str = '["http://localhost:3000", "http://localhost:5173"]'
 
     # Adaptation Engine
     ADAPTATION_MODE: str = "bandit"  # rules, bandit, policy
@@ -41,6 +42,17 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        """Parse ALLOWED_ORIGINS from JSON string to list"""
+        try:
+            if isinstance(self.ALLOWED_ORIGINS, str):
+                return json.loads(self.ALLOWED_ORIGINS)
+            return self.ALLOWED_ORIGINS
+        except:
+            # Fallback to default origins
+            return ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
 
 
 settings = Settings()
