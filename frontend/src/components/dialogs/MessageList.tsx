@@ -26,6 +26,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { spacing, fontSize } from '../../styles/designTokens';
 import type { Message } from '../../types/dialog';
 import MessageBubble from './MessageBubble';
+import { Loading } from '../Loading';
 
 /**
  * Props interface for MessageList component
@@ -110,13 +111,8 @@ export default function MessageList({ messages, loading }: MessageListProps) {
 
   return (
     <div ref={scrollContainerRef} style={containerStyle}>
-      {/* Loading indicator */}
-      {loading && messages.length === 0 && (
-        <div style={loadingStyle}>
-          <div style={spinnerStyle}></div>
-          <span>Loading messages...</span>
-        </div>
-      )}
+      {/* Loading indicator - use message skeleton for better UX */}
+      {loading && messages.length === 0 && <Loading variant="messages" />}
 
       {/* Empty state - no messages yet */}
       {!loading && messages.length === 0 && (

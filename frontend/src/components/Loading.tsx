@@ -1,6 +1,8 @@
 import type { CSSProperties } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing, fontSize, fontWeight } from '../styles/designTokens';
+import { ContentSkeleton } from './ContentSkeleton';
+import { MessageSkeleton } from './MessageSkeleton';
 
 interface LoadingProps {
   /**
@@ -19,12 +21,22 @@ interface LoadingProps {
    * @default false
    */
   fullscreen?: boolean;
+
+  /**
+   * Variant of loading indicator to display
+   * - 'spinner': Default circular spinner
+   * - 'content': Content skeleton loader
+   * - 'messages': Message skeleton loader
+   * @default 'spinner'
+   */
+  variant?: 'spinner' | 'content' | 'messages';
 }
 
 /**
  * Loading Component
  *
- * Displays a loading spinner with optional message.
+ * Displays a loading indicator with optional message.
+ * Supports multiple variants: spinner, content skeleton, and message skeleton.
  * Reusable across the application for consistent loading states.
  *
  * @example
@@ -32,10 +44,23 @@ interface LoadingProps {
  * <Loading message="Loading content..." />
  * <Loading size="small" />
  * <Loading fullscreen message="Initializing..." />
+ * <Loading variant="content" />
+ * <Loading variant="messages" />
  * ```
  */
-export function Loading({ message, size = 'medium', fullscreen = false }: LoadingProps) {
+export function Loading({ message, size = 'medium', fullscreen = false, variant = 'spinner' }: LoadingProps) {
   const { colors } = useTheme();
+
+  // Render appropriate variant
+  if (variant === 'content') {
+    return <ContentSkeleton />;
+  }
+
+  if (variant === 'messages') {
+    return <MessageSkeleton />;
+  }
+
+  // Default: render spinner
 
   const sizeMap = {
     small: '24px',

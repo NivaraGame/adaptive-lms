@@ -165,11 +165,11 @@ export function ContentViewer({
     onRequestNextContent();
   };
 
-  // Loading state
+  // Loading state - use content skeleton for better UX
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Loading message="Loading content..." />
+        <Loading variant="content" />
       </div>
     );
   }
