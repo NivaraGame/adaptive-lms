@@ -3,6 +3,7 @@ import Navigation from './components/Navigation';
 import HomePage from './pages/HomePage';
 import LearningPage from './pages/LearningPage';
 import ProfilePage from './pages/ProfilePage';
+import { ErrorHandlingDemo } from './components/ErrorHandlingDemo';
 import './App.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/learn" element={<LearningPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/error-demo" element={<ErrorHandlingDemo />} />
       </Routes>
     </BrowserRouter>
   );
