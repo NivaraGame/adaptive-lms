@@ -3,8 +3,6 @@ import api from '../services/api';
 import type { ApiError } from '../types/api';
 import { formatJSON } from '../utils/formatJSON';
 import { colors } from '../styles/designTokens';
-import { ErrorMessage } from './ErrorMessage';
-import { Loading } from './Loading';
 import {
   containerStyle,
   pageHeaderStyle,
@@ -13,6 +11,12 @@ import {
   buttonContainerStyle,
   createButtonStyle,
   buttonHoverHandlers,
+  loadingAlertStyle,
+  errorAlertStyle,
+  errorHeaderStyle,
+  errorContentStyle,
+  errorLabelStyle,
+  errorValueStyle,
   successAlertStyle,
   successHeaderStyle,
   codeBlockStyle,
@@ -145,14 +149,40 @@ export default function ApiTest() {
         </button>
       </div>
 
-      {loading && <Loading message="Testing API connection..." />}
+      {loading && (
+        <div style={loadingAlertStyle}>
+          ⏳ Loading...
+        </div>
+      )}
 
       {error && (
-        <ErrorMessage
-          message={error.message}
-          details={error.details ? JSON.stringify(error.details, null, 2) : `Status: ${error.status}, Code: ${error.code}`}
-          onDismiss={() => setError(null)}
-        />
+        <div style={errorAlertStyle}>
+          <h3 style={errorHeaderStyle}>
+            ❌ Error
+          </h3>
+          <div style={errorContentStyle}>
+            <p style={{ margin: '0.5rem 0' }}>
+              <strong style={errorLabelStyle}>Message:</strong>{' '}
+              <span style={errorValueStyle}>{error.message}</span>
+            </p>
+            <p style={{ margin: '0.5rem 0' }}>
+              <strong style={errorLabelStyle}>Status:</strong>{' '}
+              <span style={errorValueStyle}>{error.status}</span>
+            </p>
+            <p style={{ margin: '0.5rem 0' }}>
+              <strong style={errorLabelStyle}>Code:</strong>{' '}
+              <span style={errorValueStyle}>{error.code}</span>
+            </p>
+            {error.details && (
+              <p style={{ margin: '0.5rem 0' }}>
+                <strong style={errorLabelStyle}>Details:</strong>{' '}
+                <code style={{ ...inlineCodeStyle, backgroundColor: 'rgba(0, 0, 0, 0.08)', color: colors.textMuted }}>
+                  {JSON.stringify(error.details)}
+                </code>
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       {result && !error && (

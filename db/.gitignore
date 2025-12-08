@@ -28,3 +28,4 @@ redis_data/
 
 # Ollama data (if stored here)
 ollama_data/
+~
