@@ -120,21 +120,21 @@ function Navigation() {
         <div style={navLinksStyle}>
           <Link
             to="/"
-            style={createLinkStyle(location.pathname === '/')}
+            style={createLinkStyle(location.pathname === '/' || location.pathname === '/dashboard')}
             onMouseEnter={(e) => {
-              if (location.pathname !== '/') {
+              if (location.pathname !== '/' && location.pathname !== '/dashboard') {
                 e.currentTarget.style.backgroundColor = colors.bgTertiary;
               }
             }}
             onMouseLeave={(e) => {
-              if (location.pathname !== '/') {
+              if (location.pathname !== '/' && location.pathname !== '/dashboard') {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
             }}
-            aria-label="Home"
+            aria-label="Dashboard"
           >
-            <span aria-hidden="true">🏠</span>
-            <span>Home</span>
+            <span aria-hidden="true">📊</span>
+            <span>Dashboard</span>
           </Link>
           <Link
             to="/learn"
