@@ -308,12 +308,32 @@ export default function LearningPage() {
 
   // Responsive style adjustments
   const responsiveStyle = `
+    /* Mobile: Stack layout, content first */
     @media (max-width: 768px) {
       .learning-layout {
         grid-template-columns: 1fr !important;
+        gap: 1rem !important;
       }
       .content-column {
         order: -1;
+      }
+      .chat-column {
+        min-height: 400px !important;
+        max-height: 500px !important;
+      }
+    }
+
+    /* Tablet: Narrower columns */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .learning-layout {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+
+    /* Desktop: Default two-column layout */
+    @media (min-width: 1025px) {
+      .learning-layout {
+        grid-template-columns: 2fr 3fr !important;
       }
     }
   `;

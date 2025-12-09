@@ -8,10 +8,11 @@
  * @module components/content/ContentViewer
  */
 
-import { useState, type CSSProperties } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import type { ContentItem } from '../../types/content';
 import { useTheme } from '../../contexts/ThemeContext';
 import { spacing } from '../../styles/designTokens';
+import { useAnimation } from '../../hooks/useAnimation';
 import { Loading } from '../Loading';
 import { LessonViewer } from './LessonViewer';
 import { ExerciseCard } from './ExerciseCard';
@@ -64,12 +65,24 @@ export function ContentViewer({
   loading,
 }: ContentViewerProps) {
   const { colors } = useTheme();
+  const { animationClass, triggerSuccess, triggerError } = useAnimation();
 
   // State management
   const [showFeedback, setShowFeedback] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [revealedHintCount, setRevealedHintCount] = useState(0);
   const [userAnswer, setUserAnswer] = useState<string>('');
+
+  // Trigger animations when feedback is shown
+  useEffect(() => {
+    if (showFeedback && isCorrect !== null) {
+      if (isCorrect) {
+        triggerSuccess();
+      } else {
+        triggerError();
+      }
+    }
+  }, [showFeedback, isCorrect, triggerSuccess, triggerError]);
 
   // Container style
   const containerStyle: CSSProperties = {
@@ -249,7 +262,7 @@ export function ContentViewer({
     content.content_type !== 'lesson';
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} className={animationClass}>
       {/* Main Content Component */}
       {renderContentComponent()}
 

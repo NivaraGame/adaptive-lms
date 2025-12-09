@@ -194,4 +194,12 @@ export const fontFamily = {
 
 export const transition = {
   fast: 'all 0.2s',
+  medium: 'all 0.3s ease',
+  slow: 'all 0.5s ease',
+} as const;
+
+export const breakpoints = {
+  mobile: '768px',
+  tablet: '1024px',
+  desktop: '1400px',
 } as const;
