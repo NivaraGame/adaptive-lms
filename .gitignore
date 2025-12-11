@@ -79,5 +79,6 @@ github_ssh_check.sh
 docs/claude
 docs/weeks
 docs/frontend_design_v2.md
+docs/diagram
 
 tests/

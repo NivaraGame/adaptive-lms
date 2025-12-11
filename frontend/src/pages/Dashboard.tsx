@@ -12,6 +12,11 @@ import type { Dialog } from '../types/dialog';
 import type { Recommendation } from '../types/recommendation';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { Loading } from '../components/Loading';
+import { MasteryIndicator, MasteryIndicatorEmpty } from '../components/metrics/MasteryIndicator';
+import { ProgressChart } from '../components/metrics/ProgressChart';
+import { getUserMetrics } from '../services/metricService';
+import type { Metric } from '../types/metric';
+import type { ChartDataPoint } from '../components/metrics/ProgressChart';
 
 function Dashboard() {
   const { colors } = useTheme();
@@ -20,6 +25,7 @@ function Dashboard() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recentDialogs, setRecentDialogs] = useState<Dialog[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +59,16 @@ function Dashboard() {
           console.warn('Failed to fetch recommendations:', recError);
           setRecommendations([]);
         }
+
+        // Fetch metrics for chart
+        try {
+          const metrics = await getUserMetrics(userId, { limit: 90 });
+          const transformed = transformMetricsToChartData(metrics);
+          setChartData(transformed);
+        } catch (metricError) {
+          console.warn('Failed to fetch metrics:', metricError);
+          setChartData([]);
+        }
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load dashboard');
@@ -63,6 +79,25 @@ function Dashboard() {
 
     fetchDashboardData();
   }, [userId]);
+
+  // Transform metrics to chart data format (aggregate by day, use accuracy)
+  const transformMetricsToChartData = (metrics: Metric[]): ChartDataPoint[] => {
+    const accuracyMetrics = metrics.filter(m => m.metric_name === 'accuracy' && m.metric_value_f !== null);
+    const byDate: Record<string, number[]> = {};
+
+    accuracyMetrics.forEach(m => {
+      const date = new Date(m.timestamp).toISOString().split('T')[0];
+      if (!byDate[date]) byDate[date] = [];
+      byDate[date].push((m.metric_value_f || 0) * 100);
+    });
+
+    return Object.entries(byDate)
+      .map(([date, values]) => ({
+        date,
+        value: values.reduce((a, b) => a + b, 0) / values.length,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  };
 
   // Calculate streak from recent dialogs
   const calculateStreak = (dialogs: Dialog[]): number => {
@@ -286,6 +321,31 @@ function Dashboard() {
           <div style={statLabelStyle}>Average Accuracy</div>
         </div>
       </div>
+
+      {/* Progress Chart */}
+      <section style={sectionStyle}>
+        <ProgressChart data={chartData} chartType="accuracy" />
+      </section>
+
+      {/* Topic Mastery */}
+      <section style={sectionStyle}>
+        <h2 style={sectionTitleStyle}>Topic Mastery</h2>
+        {!profile.topic_mastery || Object.keys(profile.topic_mastery).length === 0 ? (
+          <MasteryIndicatorEmpty />
+        ) : (
+          <div style={{ display: 'grid', gap: spacing.lg, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            {Object.entries(profile.topic_mastery)
+              .sort(([, a], [, b]) => a - b) // Sort by mastery (lowest first for remediation)
+              .map(([topic, mastery]) => (
+                <MasteryIndicator
+                  key={topic}
+                  topic={topic}
+                  mastery={mastery}
+                />
+              ))}
+          </div>
+        )}
+      </section>
 
       {/* Recent Activity */}
       <section style={sectionStyle}>
