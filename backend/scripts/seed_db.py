@@ -23,7 +23,11 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
 from app.db.session import Base
-from content_generator import get_lesson_content, get_exercise_content, get_quiz_content
+from content_generator import (
+    get_lesson_content, get_exercise_content, get_quiz_content,
+    derive_subtopic, derive_skills, derive_prerequisites,
+    generate_hints, generate_explanations
+)
 
 BASE_URL = "http://localhost:8000/api/v1"
 
@@ -273,51 +277,87 @@ class ThesisSeeder:
         for topic, tasks in {**IT_DISCIPLINES, **MILITARY_DISCIPLINES}.items():
             for title, difficulty, ctype, description in tasks:
                 try:
+                    # Derive schema-complete fields
+                    subtopic = derive_subtopic(title, topic)
+                    skills = derive_skills(title, topic, ctype)
+                    prerequisites = derive_prerequisites(difficulty, topic, title)
+
                     # Generate rich content based on type
                     if ctype == "lesson":
-                        content_data = get_lesson_content(title, topic, description)
+                        lesson_data = get_lesson_content(title, topic, description)
+                        content_data = lesson_data
+                        reference_answer = None
+                        hints = lesson_data.get("hints", generate_hints(ctype, title))
+                        explanations = lesson_data.get("explanations", generate_explanations(ctype, title, topic))
+
                     elif ctype == "exercise":
                         exercise_data = get_exercise_content(title, topic, description)
+                        # Per README: Answers included in description for demo
                         content_data = {
                             "description": f"{description}. Answer: {exercise_data['solution']}",
                             "question": exercise_data["question"],
                             "starter_code": exercise_data.get("starter_code"),
+                            "test_cases": exercise_data.get("test_cases", [])
                         }
-                        reference_answer = {"solution": exercise_data["solution"]}
-                        hints = exercise_data["test_cases"][:2]
+                        reference_answer = {
+                            "code": exercise_data["solution"],
+                            "output": "Expected solution output"
+                        }
+                        hints = exercise_data.get("hints", generate_hints(ctype, title))
+                        explanations = exercise_data.get("explanations", generate_explanations(ctype, title, topic))
+
                     else:  # quiz
                         quiz_data = get_quiz_content(title, topic, description)
+                        # Per README: Correct answer included in description for demo
                         content_data = {
                             "description": f"{description}. Correct: {quiz_data['correct_answer']}",
                             "question": quiz_data["question"],
-                            "options": quiz_data["options"],
+                            "options": quiz_data["options"]
                         }
                         reference_answer = {
                             "correct_answer": quiz_data["correct_answer"],
                             "explanation": quiz_data["explanation"]
                         }
-                        hints = ["Eliminate wrong answers", "Read question carefully"]
+                        hints = quiz_data.get("hints", generate_hints(ctype, title))
+                        explanations = quiz_data.get("explanations", generate_explanations(ctype, title, topic))
 
-                    if ctype == "lesson":
-                        reference_answer = None
-                        hints = ["Take notes", "Review examples"]
+                    # Add generator metadata to extra_data
+                    extra_data = {
+                        "generator_version": "2.0",
+                        "schema_complete": True,
+                        "generated_at": "2024-01-15"
+                    }
 
                     resp = requests.post(f"{BASE_URL}/content", json={
                         "title": title,
                         "topic": topic,
+                        "subtopic": subtopic,
                         "difficulty_level": difficulty,
                         "format": choice(["text", "interactive", "visual"]),
                         "content_type": ctype,
                         "content_data": content_data,
                         "reference_answer": reference_answer,
                         "hints": hints,
-                        "skills": [title.replace(" ", "_").lower()],
-                        "prerequisites": []
+                        "explanations": explanations,
+                        "skills": skills,
+                        "prerequisites": prerequisites,
+                        "extra_data": extra_data
                     })
+
+                    if resp.status_code != 201:
+                        print(f"❌ Error creating '{title}': HTTP {resp.status_code}")
+                        print(f"   Response: {resp.text}")
+                        continue
+
                     resp.raise_for_status()
                     self.all_content.append(resp.json())
+
+                except requests.exceptions.RequestException as e:
+                    print(f"❌ Request error creating content '{title}': {e}")
+                    if hasattr(e.response, 'text'):
+                        print(f"   Response body: {e.response.text[:200]}")
                 except Exception as e:
-                    print(f"Error creating content '{title}': {e}")
+                    print(f"❌ Unexpected error creating content '{title}': {e}")
 
         print(f"✓ Created {len(self.all_content)} content items")
 
@@ -405,6 +445,36 @@ class ThesisSeeder:
 
         print(f"✓ Generated {metric_count} metrics")
 
+    def verify_content_sample(self):
+        """Fetch and display sample content to verify schema completeness"""
+        print("\n🔍 Verifying content schema...")
+
+        try:
+            # Fetch first content item
+            resp = requests.get(f"{BASE_URL}/content?limit=1")
+            resp.raise_for_status()
+            data = resp.json()
+
+            if data.get("items"):
+                sample = data["items"][0]
+                print(f"\n📝 Sample Content Item (ID={sample.get('content_id')}):")
+                print(f"   Title: {sample.get('title')}")
+                print(f"   Topic: {sample.get('topic')}")
+                print(f"   Subtopic: {sample.get('subtopic')}")
+                print(f"   Type: {sample.get('content_type')} | Difficulty: {sample.get('difficulty_level')} | Format: {sample.get('format')}")
+                print(f"   Skills: {sample.get('skills', [])}")
+                print(f"   Prerequisites: {sample.get('prerequisites', [])}")
+                print(f"   Hints: {len(sample.get('hints', []))} items")
+                print(f"   Explanations: {len(sample.get('explanations', []))} items")
+                print(f"   Has reference_answer: {sample.get('reference_answer') is not None}")
+                print(f"   Extra data keys: {list(sample.get('extra_data', {}).keys())}")
+                print("✓ Schema verification complete")
+            else:
+                print("⚠️  No content items found")
+
+        except Exception as e:
+            print(f"⚠️  Could not verify content: {e}")
+
     def run(self):
         print("=" * 70)
         print("🌱 ADAPTIVE LMS - API-BASED SEEDING")
@@ -415,6 +485,7 @@ class ThesisSeeder:
         self.create_content()
         self.create_dialogs_and_messages()
         self.create_metrics()
+        self.verify_content_sample()
 
         print("\n" + "=" * 70)
         print("✅ SEEDING COMPLETED SUCCESSFULLY")
