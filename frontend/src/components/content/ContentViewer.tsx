@@ -120,36 +120,27 @@ export function ContentViewer({
     }
   };
 
-  // Check answer correctness
-  // In a real implementation, this would come from the backend response
+  // Check answer correctness (local fallback)
+  // TODO: Backend should return is_correct in submit response
   const checkAnswerCorrectness = (answer: string): boolean => {
-    if (!content || !content.reference_answer) {
-      return false;
+    if (!content || !content.reference_answer) return false;
+
+    const ref = content.reference_answer;
+
+    if (typeof ref === 'string') {
+      return answer.trim().toLowerCase() === ref.trim().toLowerCase();
     }
 
-    const referenceAnswer: any = content.reference_answer;
+    if (typeof ref === 'object' && ref !== null) {
+      const correctValue = ref.correct_answer || ref.solution || ref.answer || ref.value;
 
-    // Handle different answer formats
-    if (typeof referenceAnswer === 'string') {
-      // Case-insensitive comparison for text answers
-      return answer.trim().toLowerCase() === referenceAnswer.trim().toLowerCase();
-    } else if (typeof referenceAnswer === 'object' && referenceAnswer !== null) {
-      // Handle structured answers
-      const correctAnswerValue =
-        referenceAnswer.correct_answer ||
-        referenceAnswer.answer ||
-        referenceAnswer.value;
-
-      if (typeof correctAnswerValue === 'string') {
-        return answer.trim().toLowerCase() === correctAnswerValue.trim().toLowerCase();
+      if (typeof correctValue === 'string') {
+        return answer.trim().toLowerCase() === correctValue.trim().toLowerCase();
       }
 
-      // Handle multiple correct answers
-      if (Array.isArray(correctAnswerValue)) {
+      if (Array.isArray(correctValue)) {
         const userAnswers = answer.split('|').map((a) => a.trim().toLowerCase());
-        const correctAnswers = correctAnswerValue.map((a: string) => a.trim().toLowerCase());
-
-        // Check if arrays are equal (order doesn't matter for multiple select)
+        const correctAnswers = (correctValue as string[]).map((a: string) => a.trim().toLowerCase());
         return (
           userAnswers.length === correctAnswers.length &&
           userAnswers.every((a) => correctAnswers.includes(a))
@@ -215,6 +206,7 @@ export function ContentViewer({
             onSubmitAnswer={handleSubmitAnswer}
             showFeedback={showFeedback}
             isCorrect={isCorrect || false}
+            onContinue={handleNextContent}
           />
         );
 
@@ -284,9 +276,10 @@ export function ContentViewer({
           correctAnswer={
             typeof content.reference_answer === 'string'
               ? content.reference_answer
-              : content.content_data.correct_answer ||
-                (content.reference_answer as any)?.correct_answer ||
-                (content.reference_answer as any)?.answer
+              : (content.reference_answer as any)?.correct_answer ||
+                (content.reference_answer as any)?.solution ||
+                (content.reference_answer as any)?.answer ||
+                content.content_data.correct_answer
           }
           skills={content.skills}
           onContinue={handleNextContent}

@@ -40,11 +40,14 @@ function ProfilePage() {
       setLoading(true);
       setError(null);
 
-      const userIdStr = sessionStorage.getItem('userId');
-      if (!userIdStr) {
-        setError('No user session found');
-        return;
-      }
+    let userIdStr = sessionStorage.getItem('userId');
+
+    // ✅ Static user fallback (dev mode)
+    if (!userIdStr) {
+      userIdStr = '1';
+      sessionStorage.setItem('userId', userIdStr);
+      console.log('[ProfilePage] Using static userId:', userIdStr);
+    }
 
       const userId = parseInt(userIdStr, 10);
 

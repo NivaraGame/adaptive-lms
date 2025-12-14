@@ -73,24 +73,11 @@ export default function LearningPage() {
         let storedUserId = sessionStorageUtil.getUserId();
         let storedDialogId = sessionStorageUtil.getDialogId();
 
-        // Step 2: Create or retrieve user
+        // Step 2: Use static user from database
         if (!storedUserId) {
-          console.log('[LearningPage] No stored userId found. Creating new user...');
-
-          // Generate random username and email
-          const timestamp = Date.now();
-          const randomId = Math.floor(Math.random() * 10000);
-          const username = `user_${timestamp}_${randomId}`;
-          const email = `user${timestamp}${randomId}@example.com`;
-          const password = `temp_pass_${timestamp}`;
-
-          // Create new user
-          const newUser = await createUser({ username, email, password });
-          storedUserId = newUser.user_id;
-
-          // Store in sessionStorage
+          storedUserId = 1;
           sessionStorageUtil.saveUserId(storedUserId);
-          console.log('[LearningPage] User created:', storedUserId);
+          console.log('[LearningPage] Using static user:', storedUserId);
         } else {
           console.log('[LearningPage] Found stored userId:', storedUserId);
         }

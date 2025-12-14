@@ -1,8 +1,8 @@
 /**
  * LessonViewer Component
  *
- * Displays educational lesson content in various formats (text, visual, video, interactive).
- * Renders title, topic badges, difficulty level, and formatted content based on format type.
+ * Displays educational lesson content.
+ * Renders introduction, sections, and key points from backend.
  *
  * @module components/content/LessonViewer
  */
@@ -13,44 +13,21 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { spacing, fontSize, fontWeight, borderRadius } from '../../styles/designTokens';
 import {
   parseContentData,
-  type ParsedTextContent,
-  type ParsedVisualContent,
-  type ParsedVideoContent,
-  type ParsedInteractiveContent,
+  type NormalizedLessonData,
+  type NormalizedVisualData,
+  type NormalizedVideoData,
 } from '../../utils/contentFormatter';
 
 interface LessonViewerProps {
-  /**
-   * Content item with content_type === 'lesson'
-   */
   content: ContentItem;
-
-  /**
-   * Callback when user clicks Continue button
-   */
   onContinue?: () => void;
 }
 
-/**
- * LessonViewer Component
- *
- * Displays lesson content with appropriate formatting based on content format.
- * Supports text, visual, video, and interactive formats.
- *
- * @example
- * ```tsx
- * <LessonViewer
- *   content={lessonContent}
- *   onContinue={() => loadNextContent()}
- * />
- * ```
- */
 export function LessonViewer({ content, onContinue }: LessonViewerProps) {
   const { colors } = useTheme();
 
-  const parsedContent = parseContentData(content.content_data, content.format);
+  const parsedContent = parseContentData(content.content_data, content.content_type, content.format);
 
-  // Container style
   const containerStyle: CSSProperties = {
     backgroundColor: colors.bgSecondary,
     borderRadius: '16px',
@@ -61,7 +38,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     gap: spacing.xl,
   };
 
-  // Title style
   const titleStyle: CSSProperties = {
     fontSize: fontSize['2xl'],
     fontWeight: fontWeight.bold,
@@ -69,7 +45,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     marginBottom: spacing.md,
   };
 
-  // Badge container style
   const badgeContainerStyle: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
@@ -77,7 +52,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     marginBottom: spacing.lg,
   };
 
-  // Badge style factory
   const getBadgeStyle = (bgColor: string): CSSProperties => ({
     backgroundColor: bgColor,
     color: colors.textPrimary,
@@ -90,7 +64,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     gap: spacing.xs,
   });
 
-  // Difficulty badge color
   const difficultyColors: Record<string, string> = {
     easy: colors.successLight,
     normal: colors.infoLight,
@@ -98,14 +71,12 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     challenge: colors.errorLight,
   };
 
-  // Content section style
   const contentSectionStyle: CSSProperties = {
     color: colors.textPrimary,
     fontSize: fontSize.base,
     lineHeight: '1.6',
   };
 
-  // Button style
   const buttonStyle: CSSProperties = {
     backgroundColor: colors.primary,
     color: '#ffffff',
@@ -120,7 +91,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     marginTop: spacing.lg,
   };
 
-  // List style
   const listStyle: CSSProperties = {
     paddingLeft: spacing.xl,
     marginTop: spacing.md,
@@ -132,7 +102,140 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     color: colors.textPrimary,
   };
 
-  // Render content based on format
+  const renderLessonContent = (lessonData: NormalizedLessonData) => {
+    return (
+      <div style={contentSectionStyle}>
+        {lessonData.introduction && (
+          <p style={{ marginBottom: spacing.lg, whiteSpace: 'pre-wrap' }}>
+            {lessonData.introduction}
+          </p>
+        )}
+
+        {lessonData.sections.map((section, idx) => (
+          <div key={idx} style={{ marginBottom: spacing.lg }}>
+            {section.heading && (
+              <h3
+                style={{
+                  fontSize: fontSize.lg,
+                  fontWeight: fontWeight.semibold,
+                  color: colors.textPrimary,
+                  marginBottom: spacing.md,
+                }}
+              >
+                {section.heading}
+              </h3>
+            )}
+            <p style={{ whiteSpace: 'pre-wrap' }}>{section.content}</p>
+          </div>
+        ))}
+
+        {lessonData.key_points.length > 0 && (
+          <div
+            style={{
+              backgroundColor: colors.primaryLight,
+              padding: spacing.lg,
+              borderRadius: borderRadius.lg,
+              borderLeft: `4px solid ${colors.primary}`,
+              marginTop: spacing.lg,
+            }}
+          >
+            <h3
+              style={{
+                fontSize: fontSize.lg,
+                fontWeight: fontWeight.semibold,
+                color: colors.textPrimary,
+                marginBottom: spacing.md,
+              }}
+            >
+              Key Points
+            </h3>
+            <ul style={listStyle}>
+              {lessonData.key_points.map((point, idx) => (
+                <li key={idx} style={listItemStyle}>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderVisualContent = (visualData: NormalizedVisualData) => {
+    return (
+      <div style={contentSectionStyle}>
+        {visualData.image_url && (
+          <div style={{ marginBottom: spacing.lg }}>
+            <img
+              src={visualData.image_url}
+              alt={visualData.alt_text}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                borderRadius: borderRadius.lg,
+                boxShadow: colors.shadowMd,
+              }}
+            />
+            {visualData.caption && (
+              <p
+                style={{
+                  marginTop: spacing.md,
+                  fontSize: fontSize.sm,
+                  color: colors.textMuted,
+                  fontStyle: 'italic',
+                  textAlign: 'center',
+                }}
+              >
+                {visualData.caption}
+              </p>
+            )}
+          </div>
+        )}
+        {visualData.description && (
+          <p style={{ marginTop: spacing.md, whiteSpace: 'pre-wrap' }}>{visualData.description}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderVideoContent = (videoData: NormalizedVideoData) => {
+    return (
+      <div style={contentSectionStyle}>
+        {videoData.video_url && (
+          <video
+            controls
+            style={{
+              width: '100%',
+              maxHeight: '500px',
+              borderRadius: borderRadius.lg,
+              boxShadow: colors.shadowMd,
+            }}
+            poster={videoData.thumbnail_url}
+          >
+            <source src={videoData.video_url} type="video/mp4" />
+            {videoData.subtitles && (
+              <track kind="subtitles" src={videoData.subtitles} label="English" />
+            )}
+            Your browser does not support the video tag.
+          </video>
+        )}
+        {videoData.duration && (
+          <p
+            style={{
+              marginTop: spacing.md,
+              fontSize: fontSize.sm,
+              color: colors.textMuted,
+            }}
+          >
+            Duration: {Math.floor(videoData.duration / 60)}:
+            {(videoData.duration % 60).toString().padStart(2, '0')}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (!parsedContent) {
       return (
@@ -142,141 +245,25 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
       );
     }
 
-    switch (content.format) {
-      case 'text': {
-        const textContent = parsedContent as ParsedTextContent;
-        return (
-          <div style={contentSectionStyle}>
-            {textContent.text && (
-              <div
-                style={{ whiteSpace: 'pre-wrap' }}
-                dangerouslySetInnerHTML={{
-                  __html: textContent.text.replace(/\n/g, '<br/>'),
-                }}
-              />
-            )}
-            {textContent.lists && textContent.lists.length > 0 && (
-              <div style={{ marginTop: spacing.lg }}>
-                {textContent.lists.map((list, idx) => (
-                  <ul key={idx} style={listStyle}>
-                    {list.map((item, itemIdx) => (
-                      <li key={itemIdx} style={listItemStyle}>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case 'visual': {
-        const visualContent = parsedContent as ParsedVisualContent;
-        return (
-          <div style={contentSectionStyle}>
-            {visualContent.image_url && (
-              <div style={{ marginBottom: spacing.lg }}>
-                <img
-                  src={visualContent.image_url}
-                  alt={visualContent.alt_text || 'Lesson visual content'}
-                  style={{
-                    maxWidth: '100%',
-                    height: 'auto',
-                    borderRadius: borderRadius.lg,
-                    boxShadow: colors.shadowMd,
-                  }}
-                />
-                {visualContent.caption && (
-                  <p
-                    style={{
-                      marginTop: spacing.md,
-                      fontSize: fontSize.sm,
-                      color: colors.textMuted,
-                      fontStyle: 'italic',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {visualContent.caption}
-                  </p>
-                )}
-              </div>
-            )}
-            {visualContent.description && (
-              <p style={{ marginTop: spacing.md }}>{visualContent.description}</p>
-            )}
-          </div>
-        );
-      }
-
-      case 'video': {
-        const videoContent = parsedContent as ParsedVideoContent;
-        return (
-          <div style={contentSectionStyle}>
-            {videoContent.video_url && (
-              <video
-                controls
-                style={{
-                  width: '100%',
-                  maxHeight: '500px',
-                  borderRadius: borderRadius.lg,
-                  boxShadow: colors.shadowMd,
-                }}
-                poster={videoContent.thumbnail_url}
-              >
-                <source src={videoContent.video_url} type="video/mp4" />
-                {videoContent.subtitles && (
-                  <track kind="subtitles" src={videoContent.subtitles} label="English" />
-                )}
-                Your browser does not support the video tag.
-              </video>
-            )}
-            {videoContent.duration && (
-              <p
-                style={{
-                  marginTop: spacing.md,
-                  fontSize: fontSize.sm,
-                  color: colors.textMuted,
-                }}
-              >
-                Duration: {Math.floor(videoContent.duration / 60)}:
-                {(videoContent.duration % 60).toString().padStart(2, '0')}
-              </p>
-            )}
-          </div>
-        );
-      }
-
-      case 'interactive': {
-        const interactiveContent = parsedContent as ParsedInteractiveContent;
-        return (
-          <div style={contentSectionStyle}>
-            <p style={{ color: colors.textMuted, fontStyle: 'italic' }}>
-              Interactive content type: {interactiveContent.type || 'generic'}
-            </p>
-            {interactiveContent.interactive_elements &&
-              interactiveContent.interactive_elements.length > 0 && (
-                <div style={{ marginTop: spacing.lg }}>
-                  <p style={{ color: colors.textSecondary }}>
-                    Interactive elements available: {interactiveContent.interactive_elements.length}
-                  </p>
-                </div>
-              )}
-          </div>
-        );
-      }
-
-      default:
-        return (
-          <div style={contentSectionStyle}>
-            <p style={{ color: colors.textMuted }}>Unknown content format.</p>
-          </div>
-        );
+    if (content.format === 'visual' && 'image_url' in parsedContent) {
+      return renderVisualContent(parsedContent);
     }
+
+    if (content.format === 'video' && 'video_url' in parsedContent) {
+      return renderVideoContent(parsedContent);
+    }
+
+    if ('introduction' in parsedContent) {
+      return renderLessonContent(parsedContent);
+    }
+
+    return (
+      <div style={contentSectionStyle}>
+        <p style={{ color: colors.textMuted }}>Unknown content format.</p>
+      </div>
+    );
   };
 
-  // Render learning objectives if present
   const renderObjectives = () => {
     const objectives = content.content_data.objectives;
     if (!objectives || (Array.isArray(objectives) && objectives.length === 0)) {
@@ -315,7 +302,6 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
     );
   };
 
-  // Render prerequisites if present
   const renderPrerequisites = () => {
     if (!content.prerequisites || content.prerequisites.length === 0) {
       return null;
@@ -353,17 +339,15 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
 
   return (
     <article style={containerStyle}>
-      {/* Title */}
       <h2 style={titleStyle}>{content.title}</h2>
 
-      {/* Badges */}
       <div style={badgeContainerStyle}>
         <span style={getBadgeStyle(colors.accentLight)}>
-          🎓 {content.topic}
+          {content.topic}
         </span>
         {content.subtopic && (
           <span style={getBadgeStyle(colors.purpleLight)}>
-            📚 {content.subtopic}
+            {content.subtopic}
           </span>
         )}
         <span style={getBadgeStyle(difficultyColors[content.difficulty_level] || colors.infoLight)}>
@@ -371,16 +355,10 @@ export function LessonViewer({ content, onContinue }: LessonViewerProps) {
         </span>
       </div>
 
-      {/* Prerequisites */}
       {renderPrerequisites()}
-
-      {/* Learning Objectives */}
       {renderObjectives()}
-
-      {/* Main Content */}
       {renderContent()}
 
-      {/* Continue Button */}
       {onContinue && (
         <button
           style={buttonStyle}

@@ -137,7 +137,7 @@ export const getSessionDuration = (): number => {
  */
 export const clearSession = (): void => {
   try {
-    sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+    // sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
     sessionStorage.removeItem(STORAGE_KEYS.DIALOG_ID);
     sessionStorage.removeItem(STORAGE_KEYS.SESSION_START);
   } catch (error) {

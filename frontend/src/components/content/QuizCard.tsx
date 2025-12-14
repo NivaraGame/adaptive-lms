@@ -11,45 +11,15 @@ import { useState, type CSSProperties } from 'react';
 import type { ContentItem } from '../../types/content';
 import { useTheme } from '../../contexts/ThemeContext';
 import { spacing, fontSize, fontWeight, borderRadius } from '../../styles/designTokens';
-import { parseContentData, type ParsedTextContent } from '../../utils/contentFormatter';
+import { parseContentData, type NormalizedQuizData } from '../../utils/contentFormatter';
 
 interface QuizCardProps {
-  /**
-   * Content item with content_type === 'quiz'
-   */
   content: ContentItem;
-
-  /**
-   * Callback when user submits an answer
-   */
   onSubmitAnswer: (answer: string) => Promise<void>;
-
-  /**
-   * Whether to show feedback (correct/incorrect)
-   */
   showFeedback: boolean;
-
-  /**
-   * Whether the answer was correct (only used if showFeedback is true)
-   */
   isCorrect?: boolean;
 }
 
-/**
- * QuizCard Component
- *
- * Interactive quiz card with option selection and submission.
- *
- * @example
- * ```tsx
- * <QuizCard
- *   content={quizContent}
- *   onSubmitAnswer={async (answer) => { await handleSubmit(answer); }}
- *   showFeedback={submitted}
- *   isCorrect={answerCorrect}
- * />
- * ```
- */
 export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: QuizCardProps) {
   const { colors } = useTheme();
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -57,26 +27,23 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const parsedContent = parseContentData(content.content_data, content.format);
-  const question =
-    (parsedContent as ParsedTextContent)?.text ||
-    content.content_data.question ||
-    'Question not available';
+  const parsedContent = parseContentData(content.content_data, content.content_type, content.format) as NormalizedQuizData | null;
 
-  const options = content.content_data.options || [];
-  const quizType = content.content_data.quiz_type || 'multiple_choice';
-  const correctAnswer = content.content_data.correct_answer || content.reference_answer;
-  const explanation = content.content_data.explanation || '';
+  const quizData: NormalizedQuizData = parsedContent || {
+    question: 'Quiz question not available',
+    options: [],
+    correct_answer: '',
+    explanation: '',
+    quiz_type: 'multiple_choice',
+  };
 
-  const isMultipleSelect = quizType === 'multiple_select';
+  const isMultipleSelect = quizData.quiz_type === 'multiple_select';
 
-  // Determine border color based on feedback
   const getBorderColor = () => {
     if (!showFeedback) return colors.border;
     return isCorrect ? colors.successBorder : colors.errorBorder;
   };
 
-  // Container style
   const containerStyle: CSSProperties = {
     backgroundColor: colors.bgSecondary,
     borderRadius: '16px',
@@ -89,7 +56,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     transition: 'all 0.3s ease',
   };
 
-  // Title style
   const titleStyle: CSSProperties = {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
@@ -97,7 +63,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     marginBottom: spacing.md,
   };
 
-  // Badge container style
   const badgeContainerStyle: CSSProperties = {
     display: 'flex',
     flexWrap: 'wrap',
@@ -105,7 +70,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     marginBottom: spacing.lg,
   };
 
-  // Badge style factory
   const getBadgeStyle = (bgColor: string): CSSProperties => ({
     backgroundColor: bgColor,
     color: colors.textPrimary,
@@ -118,7 +82,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     gap: spacing.xs,
   });
 
-  // Difficulty badge color
   const difficultyColors: Record<string, string> = {
     easy: colors.successLight,
     normal: colors.infoLight,
@@ -126,23 +89,21 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     challenge: colors.errorLight,
   };
 
-  // Question style
   const questionStyle: CSSProperties = {
     color: colors.textPrimary,
     fontSize: fontSize.base,
     lineHeight: '1.6',
     marginBottom: spacing.lg,
     fontWeight: fontWeight.medium,
+    whiteSpace: 'pre-wrap',
   };
 
-  // Option container style
   const optionsContainerStyle: CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: spacing.md,
   };
 
-  // Get option style based on state
   const getOptionStyle = (option: string): CSSProperties => {
     const isSelected = isMultipleSelect
       ? selectedMultiple.includes(option)
@@ -152,12 +113,7 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     let borderColor: string = colors.border;
 
     if (showFeedback) {
-      const isCorrectOption =
-        typeof correctAnswer === 'string'
-          ? option === correctAnswer
-          : Array.isArray(correctAnswer)
-          ? correctAnswer.includes(option)
-          : false;
+      const isCorrectOption = option === quizData.correct_answer;
 
       if (isCorrectOption) {
         backgroundColor = colors.successLight;
@@ -184,7 +140,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     };
   };
 
-  // Radio/Checkbox indicator style
   const getIndicatorStyle = (option: string): CSSProperties => {
     const isSelected = isMultipleSelect
       ? selectedMultiple.includes(option)
@@ -205,7 +160,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     };
   };
 
-  // Button style
   const buttonStyle: CSSProperties = {
     backgroundColor: colors.primary,
     color: '#ffffff',
@@ -220,7 +174,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     alignSelf: 'flex-start',
   };
 
-  // Feedback style
   const feedbackStyle: CSSProperties = {
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
@@ -234,7 +187,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     borderLeft: `4px solid ${isCorrect ? colors.success : colors.error}`,
   };
 
-  // Explanation style
   const explanationStyle: CSSProperties = {
     backgroundColor: colors.infoLight,
     padding: spacing.lg,
@@ -242,12 +194,10 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     borderLeft: `4px solid ${colors.info}`,
   };
 
-  // Check if user has made a selection
   function hasSelection(): boolean {
     return isMultipleSelect ? selectedMultiple.length > 0 : selectedAnswer !== '';
   }
 
-  // Handle option click
   const handleOptionClick = (option: string) => {
     if (submitted) return;
 
@@ -260,11 +210,8 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
     }
   };
 
-  // Handle answer submission
   const handleSubmit = async () => {
-    if (!hasSelection() || submitted || isSubmitting) {
-      return;
-    }
+    if (!hasSelection() || submitted || isSubmitting) return;
 
     setIsSubmitting(true);
     setSubmitted(true);
@@ -283,65 +230,66 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
 
   return (
     <article style={containerStyle}>
-      {/* Title */}
       <h2 style={titleStyle}>{content.title}</h2>
 
-      {/* Badges */}
       <div style={badgeContainerStyle}>
-        <span style={getBadgeStyle(colors.accentLight)}>
-          ❓ Quiz
-        </span>
+        <span style={getBadgeStyle(colors.accentLight)}>Quiz</span>
         <span style={getBadgeStyle(difficultyColors[content.difficulty_level] || colors.infoLight)}>
           {content.difficulty_level}
         </span>
         <span style={getBadgeStyle(colors.purpleLight)}>
-          {quizType === 'true_false' ? 'True/False' : isMultipleSelect ? 'Multiple Select' : 'Multiple Choice'}
+          {quizData.quiz_type === 'true_false'
+            ? 'True/False'
+            : isMultipleSelect
+            ? 'Multiple Select'
+            : 'Multiple Choice'}
         </span>
       </div>
 
-      {/* Question */}
-      <div style={questionStyle}>
-        <div dangerouslySetInnerHTML={{ __html: question.replace(/\n/g, '<br/>') }} />
-      </div>
+      <div style={questionStyle}>{quizData.question}</div>
 
-      {/* Options */}
-      <div style={optionsContainerStyle}>
-        {options.map((option: string, idx: number) => (
-          <div
-            key={idx}
-            style={getOptionStyle(option)}
-            onClick={() => handleOptionClick(option)}
-            onMouseEnter={(e) => {
-              if (!submitted) {
-                e.currentTarget.style.transform = 'translateX(4px)';
-                e.currentTarget.style.boxShadow = colors.shadowMd;
+      {quizData.options.length > 0 ? (
+        <div style={optionsContainerStyle}>
+          {quizData.options.map((option: string, idx: number) => (
+            <div
+              key={idx}
+              style={getOptionStyle(option)}
+              onClick={() => handleOptionClick(option)}
+              onMouseEnter={(e) => {
+                if (!submitted) {
+                  e.currentTarget.style.transform = 'translateX(4px)';
+                  e.currentTarget.style.boxShadow = colors.shadowMd;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+              role={isMultipleSelect ? 'checkbox' : 'radio'}
+              aria-checked={
+                isMultipleSelect ? selectedMultiple.includes(option) : selectedAnswer === option
               }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-            role={isMultipleSelect ? 'checkbox' : 'radio'}
-            aria-checked={
-              isMultipleSelect ? selectedMultiple.includes(option) : selectedAnswer === option
-            }
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleOptionClick(option);
-              }
-            }}
-          >
-            <div style={getIndicatorStyle(option)}>
-              {(isMultipleSelect ? selectedMultiple.includes(option) : selectedAnswer === option) && '✓'}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleOptionClick(option);
+                }
+              }}
+            >
+              <div style={getIndicatorStyle(option)}>
+                {(isMultipleSelect ? selectedMultiple.includes(option) : selectedAnswer === option) && '✓'}
+              </div>
+              <span style={{ color: colors.textPrimary, flex: 1 }}>{option}</span>
             </div>
-            <span style={{ color: colors.textPrimary, flex: 1 }}>{option}</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ color: colors.textMuted, fontStyle: 'italic' }}>
+          No options available for this quiz.
+        </div>
+      )}
 
-      {/* Submit Button */}
       <button
         onClick={handleSubmit}
         disabled={!hasSelection() || submitted || isSubmitting}
@@ -362,7 +310,6 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
         {isSubmitting ? 'Submitting...' : submitted ? 'Submitted' : 'Submit Answer'}
       </button>
 
-      {/* Feedback */}
       {showFeedback && (
         <div style={feedbackStyle}>
           <span style={{ fontSize: fontSize.xl }}>{isCorrect ? '✅' : '❌'}</span>
@@ -374,8 +321,7 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
         </div>
       )}
 
-      {/* Explanation */}
-      {showFeedback && explanation && (
+      {showFeedback && quizData.explanation && (
         <div style={explanationStyle}>
           <h3
             style={{
@@ -391,9 +337,11 @@ export function QuizCard({ content, onSubmitAnswer, showFeedback, isCorrect }: Q
             style={{
               color: colors.textPrimary,
               lineHeight: '1.6',
+              whiteSpace: 'pre-wrap',
             }}
-            dangerouslySetInnerHTML={{ __html: explanation.replace(/\n/g, '<br/>') }}
-          />
+          >
+            {quizData.explanation}
+          </div>
         </div>
       )}
     </article>

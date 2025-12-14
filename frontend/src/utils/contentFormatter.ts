@@ -1,127 +1,195 @@
 /**
  * Content Formatter Utilities
  *
- * Utilities for parsing and formatting content_data from backend.
- * Handles different content formats: text, visual, video, interactive.
+ * Parses content_data from backend into typed structures.
+ * Backend contract: @backend/scripts/content_generator.py
+ *
+ * IMPORTANT: All content is rendered as plain text for security.
+ * No HTML rendering except with explicit sanitization.
  *
  * @module utils/contentFormatter
  */
 
-import type { ContentFormat } from '../types/content';
+import type {
+  ContentFormat,
+  ContentType,
+} from '../types/content';
 
 /**
- * Parsed text content structure
+ * Normalized lesson data
  */
-export interface ParsedTextContent {
-  text?: string;
-  headings?: string[];
-  lists?: string[][];
-  emphasis?: string[];
+export interface NormalizedLessonData {
+  introduction: string;
+  sections: Array<{ heading: string; content: string }>;
+  key_points: string[];
 }
 
 /**
- * Parsed visual content structure
+ * Normalized exercise data
  */
-export interface ParsedVisualContent {
-  image_url?: string;
-  caption?: string;
-  description?: string;
-  alt_text?: string;
+export interface NormalizedExerciseData {
+  question: string;
+  description: string;
+  starter_code: string;
+  solution: string;
+  test_cases: string[];
 }
 
 /**
- * Parsed video content structure
+ * Normalized quiz data
  */
-export interface ParsedVideoContent {
-  video_url?: string;
+export interface NormalizedQuizData {
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  quiz_type: 'multiple_choice' | 'true_false' | 'multiple_select';
+}
+
+/**
+ * Normalized visual data
+ */
+export interface NormalizedVisualData {
+  image_url: string;
+  caption: string;
+  description: string;
+  alt_text: string;
+}
+
+/**
+ * Normalized video data
+ */
+export interface NormalizedVideoData {
+  video_url: string;
   duration?: number;
-  subtitles?: string;
-  thumbnail_url?: string;
+  subtitles: string;
+  thumbnail_url: string;
 }
 
 /**
- * Parsed interactive content structure
+ * Parse lesson content_data
+ * Backend shape: { introduction, sections: [{heading, content}], key_points: [] }
  */
-export interface ParsedInteractiveContent {
-  interactive_elements?: any[];
-  type?: string;
+export function parseLessonData(contentData: Record<string, any>): NormalizedLessonData {
+  return {
+    introduction: String(contentData.introduction || ''),
+    sections: Array.isArray(contentData.sections)
+      ? contentData.sections.map((s: any) => ({
+          heading: String(s?.heading || ''),
+          content: String(s?.content || ''),
+        }))
+      : [],
+    key_points: Array.isArray(contentData.key_points)
+      ? contentData.key_points.map((kp: any) => String(kp || ''))
+      : [],
+  };
 }
 
 /**
- * Union type for all parsed content types
+ * Parse exercise content_data
+ * Backend shape: { question, starter_code?, solution?, test_cases?: [] }
  */
-export type ParsedContentData =
-  | ParsedTextContent
-  | ParsedVisualContent
-  | ParsedVideoContent
-  | ParsedInteractiveContent;
+export function parseExerciseData(contentData: Record<string, any>): NormalizedExerciseData {
+  return {
+    question: String(contentData.question || contentData.prompt || ''),
+    description: String(contentData.description || ''),
+    starter_code: String(contentData.starter_code || ''),
+    solution: String(contentData.solution || ''),
+    test_cases: Array.isArray(contentData.test_cases)
+      ? contentData.test_cases.map((tc: any) => String(tc || ''))
+      : [],
+  };
+}
 
 /**
- * Parse content_data JSON based on format type
+ * Parse quiz content_data
+ * Backend shape: { question, options: [], correct_answer, explanation }
+ */
+export function parseQuizData(contentData: Record<string, any>): NormalizedQuizData {
+  const quizType = contentData.quiz_type || 'multiple_choice';
+
+  return {
+    question: String(contentData.question || ''),
+    options: Array.isArray(contentData.options)
+      ? contentData.options.map((o: any) => String(o || ''))
+      : [],
+    correct_answer: String(contentData.correct_answer || ''),
+    explanation: String(contentData.explanation || ''),
+    quiz_type:
+      quizType === 'true_false' || quizType === 'multiple_select'
+        ? quizType
+        : 'multiple_choice',
+  };
+}
+
+/**
+ * Parse visual content_data
+ */
+export function parseVisualData(contentData: Record<string, any>): NormalizedVisualData {
+  return {
+    image_url: String(contentData.image_url || contentData.imageUrl || ''),
+    caption: String(contentData.caption || ''),
+    description: String(contentData.description || ''),
+    alt_text: String(contentData.alt_text || contentData.altText || contentData.description || 'Visual content'),
+  };
+}
+
+/**
+ * Parse video content_data
+ */
+export function parseVideoData(contentData: Record<string, any>): NormalizedVideoData {
+  return {
+    video_url: String(contentData.video_url || contentData.videoUrl || ''),
+    duration: typeof contentData.duration === 'number' ? contentData.duration : undefined,
+    subtitles: String(contentData.subtitles || ''),
+    thumbnail_url: String(contentData.thumbnail_url || contentData.thumbnailUrl || ''),
+  };
+}
+
+/**
+ * Main parser: routes by content_type
  *
- * @param contentData - Raw content_data object from backend
- * @param format - Content format type
- * @returns Parsed content object with typed fields, or null if parsing fails
- *
- * @example
- * ```typescript
- * const parsed = parseContentData(content.content_data, content.format);
- * if (parsed && 'text' in parsed) {
- *   console.log(parsed.text);
- * }
- * ```
+ * @param contentData - Raw content_data from backend
+ * @param contentType - Content type discriminator
+ * @param format - Format (used for lessons that may have visual/video formats)
+ * @returns Normalized, type-safe data structure
  */
 export function parseContentData(
   contentData: Record<string, any>,
+  contentType: ContentType,
   format: ContentFormat
-): ParsedContentData | null {
+):
+  | NormalizedLessonData
+  | NormalizedExerciseData
+  | NormalizedQuizData
+  | NormalizedVisualData
+  | NormalizedVideoData
+  | null {
+
   if (!contentData || typeof contentData !== 'object') {
-    console.warn('Invalid content_data provided to parseContentData');
+    console.warn('Invalid content_data:', contentData);
     return null;
   }
 
   try {
-    switch (format) {
-      case 'text': {
-        return {
-          text: contentData.text || contentData.content || '',
-          headings: Array.isArray(contentData.headings) ? contentData.headings : [],
-          lists: Array.isArray(contentData.lists) ? contentData.lists : [],
-          emphasis: Array.isArray(contentData.emphasis) ? contentData.emphasis : [],
-        } as ParsedTextContent;
-      }
+    switch (contentType) {
+      case 'lesson':
+        if (format === 'visual') return parseVisualData(contentData);
+        if (format === 'video') return parseVideoData(contentData);
+        return parseLessonData(contentData);
 
-      case 'visual': {
-        return {
-          image_url: contentData.image_url || contentData.imageUrl || '',
-          caption: contentData.caption || '',
-          description: contentData.description || '',
-          alt_text: contentData.alt_text || contentData.altText || contentData.description || '',
-        } as ParsedVisualContent;
-      }
+      case 'exercise':
+        return parseExerciseData(contentData);
 
-      case 'video': {
-        return {
-          video_url: contentData.video_url || contentData.videoUrl || '',
-          duration: typeof contentData.duration === 'number' ? contentData.duration : undefined,
-          subtitles: contentData.subtitles || '',
-          thumbnail_url: contentData.thumbnail_url || contentData.thumbnailUrl || '',
-        } as ParsedVideoContent;
-      }
+      case 'quiz':
+        return parseQuizData(contentData);
 
-      case 'interactive': {
-        return {
-          interactive_elements: Array.isArray(contentData.interactive_elements)
-            ? contentData.interactive_elements
-            : contentData.elements || [],
-          type: contentData.type || 'generic',
-        } as ParsedInteractiveContent;
-      }
+      case 'explanation':
+        return parseLessonData(contentData);
 
-      default: {
-        console.warn(`Unknown content format: ${format}`);
+      default:
+        console.warn('Unknown content_type:', contentType);
         return null;
-      }
     }
   } catch (error) {
     console.error('Error parsing content_data:', error);
@@ -134,12 +202,6 @@ export function parseContentData(
  *
  * @param timestamp - ISO 8601 timestamp string
  * @returns Formatted string (e.g., "Just now", "5 minutes ago", "14:30", "Mar 15, 14:30")
- *
- * @example
- * ```typescript
- * const formatted = formatTimestamp('2024-03-15T14:30:00Z');
- * console.log(formatted); // "Mar 15, 14:30" (if not today)
- * ```
  */
 export function formatTimestamp(timestamp: string): string {
   try {
@@ -148,17 +210,9 @@ export function formatTimestamp(timestamp: string): string {
     const diffMs = now.getTime() - date.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
 
-    // Less than 1 minute ago
-    if (diffMinutes < 1) {
-      return 'Just now';
-    }
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
 
-    // Less than 1 hour ago
-    if (diffMinutes < 60) {
-      return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-    }
-
-    // Today
     const isToday = date.toDateString() === now.toDateString();
     if (isToday) {
       const hours = date.getHours().toString().padStart(2, '0');
@@ -166,7 +220,6 @@ export function formatTimestamp(timestamp: string): string {
       return `${hours}:${minutes}`;
     }
 
-    // This year
     const isThisYear = date.getFullYear() === now.getFullYear();
     if (isThisYear) {
       const options: Intl.DateTimeFormatOptions = {
@@ -178,7 +231,6 @@ export function formatTimestamp(timestamp: string): string {
       return date.toLocaleString('en-US', options);
     }
 
-    // Older
     const options: Intl.DateTimeFormatOptions = {
       month: 'short',
       day: 'numeric',
@@ -192,32 +244,18 @@ export function formatTimestamp(timestamp: string): string {
 }
 
 /**
- * Sanitize user input to prevent XSS and other security issues
- *
- * @param input - User input string
- * @returns Sanitized string
- *
- * @example
- * ```typescript
- * const safe = sanitizeUserInput(userInput);
- * ```
+ * Sanitize user input (basic - strips scripts/iframes)
+ * For production with HTML support, integrate DOMPurify
  */
 export function sanitizeUserInput(input: string): string {
-  if (typeof input !== 'string') {
-    return '';
-  }
+  if (typeof input !== 'string') return '';
 
-  // Trim whitespace
   let sanitized = input.trim();
-
-  // Limit length (max 5000 characters)
   const MAX_LENGTH = 5000;
   if (sanitized.length > MAX_LENGTH) {
     sanitized = sanitized.substring(0, MAX_LENGTH);
   }
 
-  // Remove potentially harmful HTML/scripts
-  // This is a basic sanitization - for production, consider using DOMPurify
   sanitized = sanitized
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')

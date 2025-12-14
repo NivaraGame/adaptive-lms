@@ -1,6 +1,7 @@
 /**
  * Content-related TypeScript types
  * Maps to backend schema: @backend/app/schemas/content.py
+ * Backend contract source: @backend/scripts/content_generator.py
  */
 
 /**
@@ -22,6 +23,70 @@ export type ContentFormat = 'text' | 'visual' | 'video' | 'interactive';
 export type ContentType = 'lesson' | 'exercise' | 'quiz' | 'explanation';
 
 /**
+ * Lesson content_data shape (backend contract)
+ * @backend/scripts/content_generator.py:get_lesson_content
+ */
+export interface LessonContentData {
+  introduction: string;
+  sections: Array<{ heading: string; content: string }>;
+  key_points: string[];
+}
+
+/**
+ * Exercise content_data shape (backend contract)
+ * @backend/scripts/content_generator.py:get_exercise_content
+ */
+export interface ExerciseContentData {
+  question: string;
+  description?: string;
+  starter_code?: string;
+  solution?: string;
+  test_cases?: string[];
+}
+
+/**
+ * Quiz content_data shape (backend contract)
+ * @backend/scripts/content_generator.py:get_quiz_content
+ */
+export interface QuizContentData {
+  question: string;
+  options: string[];
+  correct_answer: string;
+  explanation: string;
+  quiz_type?: 'multiple_choice' | 'true_false' | 'multiple_select';
+}
+
+/**
+ * Visual content_data shape
+ */
+export interface VisualContentData {
+  image_url?: string;
+  caption?: string;
+  description?: string;
+  alt_text?: string;
+}
+
+/**
+ * Video content_data shape
+ */
+export interface VideoContentData {
+  video_url?: string;
+  duration?: number;
+  subtitles?: string;
+  thumbnail_url?: string;
+}
+
+/**
+ * Reference answer structure for exercises
+ */
+export interface ReferenceAnswer {
+  solution?: string;
+  answer?: string;
+  correct_answer?: string;
+  value?: string;
+}
+
+/**
  * Content item interface matching backend ContentItemResponse schema
  * @backend/app/schemas/content.py:ContentItemResponse
  */
@@ -34,13 +99,31 @@ export interface ContentItem {
   format: ContentFormat;
   content_type: ContentType;
   content_data: Record<string, any>;
-  reference_answer: Record<string, any> | null;
+  reference_answer: ReferenceAnswer | string | null;
   hints: any[];
   explanations: any[];
   skills: string[];
   prerequisites: string[];
   extra_data: Record<string, any>;
 }
+
+/**
+ * Typed content items with discriminated unions
+ */
+export type LessonContentItem = ContentItem & {
+  content_type: 'lesson';
+  content_data: LessonContentData;
+};
+
+export type ExerciseContentItem = ContentItem & {
+  content_type: 'exercise';
+  content_data: ExerciseContentData;
+};
+
+export type QuizContentItem = ContentItem & {
+  content_type: 'quiz';
+  content_data: QuizContentData;
+};
 
 /**
  * Pagination metadata interface
