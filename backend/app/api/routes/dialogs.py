@@ -123,6 +123,57 @@ def create_dialog_message(dialog_id: int, message: MessageCreate, db: Session = 
             # Log the error but don't fail the message creation
             logger.error(f"Error in metrics workflow for message_id={db_message.message_id}: {str(e)}")
 
+        # Generate AI response if dialog type is educational
+        # Skip Ollama for exercise/quiz answers (identified by message_type in extra_data)
+        is_content_answer = message.extra_data and message.extra_data.get("message_type") == "content_answer"
+
+        if dialog.dialog_type == "educational" and not is_content_answer:
+            try:
+                from app.services.llm_service import get_ollama_response, check_ollama_available
+                from app.models.content import ContentItem
+
+                if check_ollama_available():
+                    # Build context-aware system prompt
+                    system_prompt = "You are a helpful educational assistant. Provide clear, concise answers to help students learn."
+
+                    # Get current content for context
+                    current_content_id = message.extra_data.get("current_content_id") if message.extra_data else None
+                    if current_content_id:
+                        content = db.query(ContentItem).filter(ContentItem.content_id == current_content_id).first()
+                        if content:
+                            system_prompt += f"\n\nCurrent learning material:\n"
+                            system_prompt += f"Topic: {content.topic}\n"
+                            system_prompt += f"Title: {content.title}\n"
+                            system_prompt += f"Type: {content.content_type}\n"
+                            system_prompt += f"Difficulty: {content.difficulty_level}\n"
+
+                            if content.content_data:
+                                if content.content_data.get("description"):
+                                    system_prompt += f"\nDescription: {content.content_data['description']}\n"
+                                if content.content_data.get("question"):
+                                    system_prompt += f"\nQuestion: {content.content_data['question']}\n"
+
+                            if content.reference_answer:
+                                system_prompt += f"\nReference answer: {content.reference_answer}\n"
+
+                            if content.explanations:
+                                system_prompt += f"\nExplanations: {content.explanations}\n"
+
+                    ai_response = get_ollama_response(message.content, system_prompt=system_prompt)
+
+                    # Create system message with AI response
+                    ai_message = Message(
+                        dialog_id=dialog_id,
+                        sender_type="system",
+                        content=ai_response,
+                        is_question=False
+                    )
+                    db.add(ai_message)
+                    db.commit()
+
+            except Exception as e:
+                logger.error(f"Ollama response failed: {e}")
+
     return db_message
 
 

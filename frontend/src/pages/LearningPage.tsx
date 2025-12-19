@@ -30,6 +30,7 @@ import { useDialog } from '../hooks/useDialog';
 import { useContent } from '../hooks/useContent';
 import { useRecommendation } from '../hooks/useRecommendation';
 import { createUser } from '../services/userService';
+import { sendMessage } from '../services/dialogService';
 import DialogHeader from '../components/dialogs/DialogHeader';
 import ChatInterface from '../components/dialogs/ChatInterface';
 import { ContentViewer } from '../components/content/ContentViewer';
@@ -144,26 +145,89 @@ export default function LearningPage() {
    */
   const handleSubmitAnswer = async (answer: string): Promise<void> => {
     try {
-      if (!dialog) {
-        throw new Error('No active dialog');
+      if (!dialog || !content) {
+        throw new Error('No active dialog or content');
       }
 
       console.log('[LearningPage] Submitting answer:', answer);
 
-      // The ChatInterface will handle sending the message
-      // The backend automatically computes metrics and updates user profile
-      // when a message is created via POST /api/v1/dialogs/{id}/messages
+      // TODO: Move correctness evaluation to backend
+      const isCorrect = checkAnswerCorrectness(answer, content);
 
-      // Note: In a production app, we might want to:
-      // 1. Send the answer with additional metadata (content_id, time_taken, etc.)
-      // 2. Get feedback from the backend about correctness
-      // 3. Display system response message
+      // TODO: Track response time from content display to submission
+      const responseTimeSeconds = 0; // Placeholder - implement timer in ContentViewer
+
+      const extraData = {
+        message_type: 'content_answer',
+        content_meta: {
+          content_id: content.content_id,
+          content_type: content.content_type,
+          topic: content.topic,
+          difficulty_level: content.difficulty_level,
+          format: content.format,
+        },
+        answer_meta: {
+          is_correct: isCorrect,
+          response_time_seconds: responseTimeSeconds,
+          hints_used: 0, // TODO: Pass from ContentViewer
+        },
+      };
+
+      // Send as regular message with content metadata
+      await sendMessage(
+        dialog.dialog_id,
+        answer,
+        'user',
+        false,
+        extraData
+      );
+
+      // Note: Profile updates happen automatically on backend via metrics workflow
+      // If using React Query, invalidate profile cache here:
+      // queryClient.invalidateQueries(['userProfile', userId])
 
       console.log('[LearningPage] Answer submitted successfully');
     } catch (error) {
       console.error('[LearningPage] Failed to submit answer:', error);
       throw error;
     }
+  };
+
+  // TODO: Move to backend - temporary frontend correctness check
+  const checkAnswerCorrectness = (answer: string, content: any): boolean => {
+    let correctValue: string | string[] | undefined;
+
+    if (content.content_type === 'quiz' && content.content_data?.correct_answer) {
+      correctValue = content.content_data.correct_answer;
+    } else if (content.content_type === 'exercise') {
+      if (content.content_data?.solution) {
+        correctValue = content.content_data.solution;
+      } else if (content.reference_answer) {
+        const ref = content.reference_answer;
+        if (typeof ref === 'string') {
+          correctValue = ref;
+        } else if (typeof ref === 'object' && ref !== null) {
+          correctValue = ref.solution || ref.answer || ref.correct_answer || ref.value;
+        }
+      }
+    }
+
+    if (!correctValue) return false;
+
+    if (typeof correctValue === 'string') {
+      return answer.trim().toLowerCase() === correctValue.trim().toLowerCase();
+    }
+
+    if (Array.isArray(correctValue)) {
+      const userAnswers = answer.split('|').map((a) => a.trim().toLowerCase());
+      const correctAnswers = (correctValue as string[]).map((a: string) => a.trim().toLowerCase());
+      return (
+        userAnswers.length === correctAnswers.length &&
+        userAnswers.every((a) => correctAnswers.includes(a))
+      );
+    }
+
+    return false;
   };
 
   /**
@@ -394,6 +458,7 @@ export default function LearningPage() {
         <div style={chatColumnStyle} className="chat-column">
           <ChatInterface
             dialogId={dialog.dialog_id}
+            currentContentId={currentContentId || undefined}
             onMessageSent={() => {
               console.log('[LearningPage] Message sent');
             }}

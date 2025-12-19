@@ -31,7 +31,7 @@ import * as dialogService from '../services/dialogService';
  */
 export interface UseMessagesReturn {
   messages: Message[];
-  sendMessage: (content: string, isQuestion?: boolean) => Promise<Message>;
+  sendMessage: (content: string, isQuestion?: boolean, extraData?: any) => Promise<Message>;
   loading: boolean;
   error: Error | null;
   refetch: () => void;
@@ -73,24 +73,24 @@ export function useMessages(dialogId: number): UseMessagesReturn {
       return fetchedMessages;
     },
     enabled: !!dialogId, // Only fetch when dialogId exists
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 3 * 1000, // 3 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 30 * 1000, // Auto-refetch every 30 seconds for new system messages
+    refetchInterval: 3 * 1000, // Auto-refetch every 3 seconds for new system messages
   });
 
   // Mutation for sending a new message
   const sendMessageMutation = useMutation<
     Message,
     Error,
-    { content: string; isQuestion: boolean }
+    { content: string; isQuestion: boolean; extraData?: any }
   >({
-    mutationFn: async ({ content, isQuestion }) => {
+    mutationFn: async ({ content, isQuestion, extraData }) => {
       const newMessage = await dialogService.sendMessage(
         dialogId,
         content,
         'user', // Always 'user' sender type from frontend
         isQuestion,
-        {} // Empty extraData by default
+        extraData || {}
       );
       return newMessage;
     },
@@ -136,11 +136,13 @@ export function useMessages(dialogId: number): UseMessagesReturn {
   // Wrapper function for sendMessage mutation
   const sendMessage = async (
     content: string,
-    isQuestion: boolean = false
+    isQuestion: boolean = false,
+    extraData?: any
   ): Promise<Message> => {
     const result = await sendMessageMutation.mutateAsync({
       content,
       isQuestion,
+      extraData,
     });
     return result;
   };

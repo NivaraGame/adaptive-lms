@@ -21,6 +21,7 @@
  * ```
  */
 
+import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMessages } from '../../hooks/useMessages';
@@ -36,6 +37,8 @@ export interface ChatInterfaceProps {
   dialogId: number;
   /** Optional callback when a message is successfully sent */
   onMessageSent?: () => void;
+  /** Current content ID for Ollama context */
+  currentContentId?: number;
 }
 
 /**
@@ -47,20 +50,36 @@ export interface ChatInterfaceProps {
 export default function ChatInterface({
   dialogId,
   onMessageSent,
+  currentContentId,
 }: ChatInterfaceProps) {
   const { colors } = useTheme();
   const { messages, sendMessage, loading, error } = useMessages(dialogId);
+  const [waitingForAI, setWaitingForAI] = useState(false);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
+
+  // Check if AI responded (new message arrived)
+  useEffect(() => {
+    if (waitingForAI && messages.length > lastMessageCount) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.sender_type === 'system') {
+        setWaitingForAI(false);
+      }
+    }
+  }, [messages, waitingForAI, lastMessageCount]);
 
   // Handle sending a message
   const handleSendMessage = async (content: string) => {
     try {
-      await sendMessage(content, false); // is_question defaults to false
-      // Call optional callback on success
+      setWaitingForAI(true);
+      setLastMessageCount(messages.length);
+
+      const extraData = currentContentId ? { current_content_id: currentContentId } : {};
+      await sendMessage(content, false, extraData);
+
       onMessageSent?.();
     } catch (err) {
-      // Error is already captured by useMessages hook
+      setWaitingForAI(false);
       console.error('Failed to send message:', err);
-      // Re-throw to let InputArea handle display
       throw err;
     }
   };
@@ -81,6 +100,7 @@ export default function ChatInterface({
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
+    textAlign: 'left'
   };
 
   // Input container style - fixed at bottom
@@ -103,7 +123,7 @@ export default function ChatInterface({
 
       {/* Message list - scrollable area */}
       <div style={messagesContainerStyle}>
-        <MessageList messages={messages} loading={loading} />
+        <MessageList messages={messages} loading={loading} waitingForAI={waitingForAI} />
       </div>
 
       {/* Input area - sticky to bottom */}

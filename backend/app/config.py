@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OPENAI_API_KEY: str = ""
-    LLM_MODEL: str = "llama2"
+    LLM_MODEL: str = "llama3.2:1b" # або llama3.2:3b
 
     # Application
     APP_NAME: str = "Adaptive LMS"

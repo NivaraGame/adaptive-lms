@@ -93,6 +93,11 @@ export function MasteryIndicator({
     fontWeight: fontWeight.semibold,
     color: colors.textPrimary,
     margin: 0,
+    flex: 1,
+    overflow: 'hidden' as const,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+    marginRight: spacing.md,
   };
 
   const masteryLabelStyle = {
@@ -102,6 +107,7 @@ export function MasteryIndicator({
     backgroundColor: masteryLevel.bgColor,
     padding: `${spacing.xs} ${spacing.md}`,
     borderRadius: borderRadius.md,
+    flexShrink: 0,
   };
 
   const progressContainerStyle = {
@@ -174,7 +180,7 @@ export function MasteryIndicator({
       aria-label={`${topic}: ${percentage}% mastery - ${masteryLevel.label}`}
     >
       <div style={headerStyle}>
-        <h3 style={topicNameStyle}>{topic}</h3>
+        <h3 style={topicNameStyle} title={topic}>{topic}</h3>
         <span style={masteryLabelStyle}>{masteryLevel.label}</span>
       </div>
 

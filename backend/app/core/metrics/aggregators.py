@@ -217,6 +217,20 @@ def aggregate_metrics(
 
         profile.avg_response_time = round(new_avg, 2)
 
+    # Update average accuracy if available
+    if metrics.get("accuracy") is not None:
+        current_avg = profile.avg_accuracy or 0.0
+        interaction_count = profile.total_interactions or 0
+
+        new_avg = update_response_time_avg(
+            current_avg=current_avg,
+            new_response_time=metrics["accuracy"],
+            interaction_count=interaction_count,
+            window_size=window_size
+        )
+
+        profile.avg_accuracy = round(new_avg, 4)
+
     # Increment total interactions
     profile.total_interactions = (profile.total_interactions or 0) + 1
 
@@ -229,6 +243,7 @@ def aggregate_metrics(
     return {
         "topic_mastery": profile.topic_mastery,
         "avg_response_time": profile.avg_response_time,
+        "avg_accuracy": profile.avg_accuracy,
         "total_interactions": profile.total_interactions,
     }
 

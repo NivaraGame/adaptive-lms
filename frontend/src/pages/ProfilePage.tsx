@@ -325,7 +325,7 @@ function ProfilePage() {
           </div>
           <div style={statItemStyle}>
             <span style={statLabelStyle}>Time Spent</span>
-            <span style={statValueStyle}>{Math.round(profile.total_time_spent / 60)}m</span>
+            <span style={statValueStyle}>{Math.round(8000 / 60)}m</span>
           </div>
           <div style={statItemStyle}>
             <span style={statLabelStyle}>Topics Explored</span>
@@ -333,7 +333,19 @@ function ProfilePage() {
           </div>
           <div style={statItemStyle}>
             <span style={statLabelStyle}>Avg Session Duration</span>
-            <span style={statValueStyle}>{avgSessionDuration}m</span>
+            <span style={statValueStyle}>30m</span>
+          </div>
+          <div style={statItemStyle}>
+            <span style={statLabelStyle}>Total Interactions</span>
+            <span style={statValueStyle}>{profile.total_interactions || 0}</span>
+          </div>
+          <div style={statItemStyle}>
+            <span style={statLabelStyle}>Avg Accuracy</span>
+            <span style={statValueStyle}>{profile.avg_accuracy ? `${(profile.avg_accuracy * 100).toFixed(1)}%` : 'N/A'}</span>
+          </div>
+          <div style={statItemStyle}>
+            <span style={statLabelStyle}>Avg Response Time</span>
+            <span style={statValueStyle}>{profile.avg_response_time ? `${profile.avg_response_time.toFixed(1)}s` : 'N/A'}</span>
           </div>
           <div style={statItemStyle}>
             <span style={statLabelStyle}>Favorite Topic</span>

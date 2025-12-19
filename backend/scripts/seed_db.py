@@ -297,6 +297,7 @@ class ThesisSeeder:
                             "description": f"{description}. Answer: {exercise_data['solution']}",
                             "question": exercise_data["question"],
                             "starter_code": exercise_data.get("starter_code"),
+                            "solution": exercise_data["solution"],
                             "test_cases": exercise_data.get("test_cases", [])
                         }
                         reference_answer = {
@@ -312,7 +313,9 @@ class ThesisSeeder:
                         content_data = {
                             "description": f"{description}. Correct: {quiz_data['correct_answer']}",
                             "question": quiz_data["question"],
-                            "options": quiz_data["options"]
+                            "options": quiz_data["options"],
+                            "correct_answer": quiz_data["correct_answer"],
+                            "explanation": quiz_data["explanation"]
                         }
                         reference_answer = {
                             "correct_answer": quiz_data["correct_answer"],

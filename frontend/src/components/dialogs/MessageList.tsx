@@ -36,6 +36,8 @@ export interface MessageListProps {
   messages: Message[];
   /** Loading state for message fetching */
   loading: boolean;
+  /** Waiting for AI response */
+  waitingForAI?: boolean;
 }
 
 /**
@@ -45,19 +47,19 @@ export interface MessageListProps {
  * Shows loading spinner when fetching messages.
  * Displays empty state when no messages exist.
  */
-export default function MessageList({ messages, loading }: MessageListProps) {
+export default function MessageList({ messages, loading, waitingForAI }: MessageListProps) {
   const { colors } = useTheme();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or AI starts thinking
   useEffect(() => {
-    if (scrollContainerRef.current && messages.length > 0) {
+    if (scrollContainerRef.current && (messages.length > 0 || waitingForAI)) {
       scrollContainerRef.current.scrollTo({
         top: scrollContainerRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
-  }, [messages]);
+  }, [messages, waitingForAI]);
 
   // Container style - scrollable area
   const containerStyle: CSSProperties = {
@@ -136,8 +138,51 @@ export default function MessageList({ messages, loading }: MessageListProps) {
         />
       ))}
 
+      {/* AI thinking indicator */}
+      {waitingForAI && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing.md,
+            padding: spacing.md,
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: colors.primary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '16px',
+            }}
+          >
+            🤖
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing.sm,
+              padding: `${spacing.md} ${spacing.lg}`,
+              backgroundColor: colors.bgSecondary,
+              borderRadius: '16px',
+              borderBottomLeftRadius: '4px',
+            }}
+          >
+            <div style={spinnerStyle}></div>
+            <span style={{ fontSize: fontSize.sm, color: colors.textSecondary }}>
+              AI думає...
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Loading indicator for new messages (when messages already exist) */}
-      {loading && messages.length > 0 && (
+      {loading && messages.length > 0 && !waitingForAI && (
         <div
           style={{
             ...loadingStyle,

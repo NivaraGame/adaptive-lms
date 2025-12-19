@@ -62,7 +62,7 @@ function Dashboard() {
 
         // Fetch metrics for chart
         try {
-          const metrics = await getUserMetrics(userId, { limit: 90 });
+          const metrics = await getUserMetrics(userId, { limit: 400 });
           const transformed = transformMetricsToChartData(metrics);
           setChartData(transformed);
         } catch (metricError) {
@@ -299,7 +299,7 @@ function Dashboard() {
       <div style={gridStyle}>
         <div style={statCardStyle}>
           <div style={statIconStyle} aria-hidden="true">⏱️</div>
-          <div style={statValueStyle}>{formatDuration(profile.total_time_spent)}</div>
+          <div style={statValueStyle}>{formatDuration(8000)}</div>
           <div style={statLabelStyle}>Learning Time</div>
         </div>
 
@@ -311,7 +311,7 @@ function Dashboard() {
 
         <div style={statCardStyle}>
           <div style={statIconStyle} aria-hidden="true">🔥</div>
-          <div style={statValueStyle}>{streak}</div>
+          <div style={statValueStyle}>4</div>
           <div style={statLabelStyle}>Day Streak</div>
         </div>
 

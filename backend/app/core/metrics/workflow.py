@@ -212,8 +212,17 @@ def _fetch_message_data(
     dialog = db.query(Dialog).filter(Dialog.dialog_id == message.dialog_id).first()
 
     # Fetch content if content_id is in extra_data
+    # Support both old format (content_id) and new format (content_meta.content_id)
     content = None
-    content_id = message.extra_data.get("content_id") if message.extra_data else None
+    content_id = None
+    if message.extra_data:
+        # New format: content_meta.content_id
+        if "content_meta" in message.extra_data:
+            content_id = message.extra_data["content_meta"].get("content_id")
+        # Old format: content_id (for backwards compatibility)
+        elif "content_id" in message.extra_data:
+            content_id = message.extra_data["content_id"]
+
     if content_id:
         content = db.query(ContentItem).filter(ContentItem.content_id == content_id).first()
 

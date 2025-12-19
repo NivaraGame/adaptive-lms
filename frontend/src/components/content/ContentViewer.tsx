@@ -123,29 +123,43 @@ export function ContentViewer({
   // Check answer correctness (local fallback)
   // TODO: Backend should return is_correct in submit response
   const checkAnswerCorrectness = (answer: string): boolean => {
-    if (!content || !content.reference_answer) return false;
+    if (!content) return false;
 
-    const ref = content.reference_answer;
+    let correctValue: string | string[] | undefined;
 
-    if (typeof ref === 'string') {
-      return answer.trim().toLowerCase() === ref.trim().toLowerCase();
+    // For quizzes, correct_answer is in content_data
+    if (content.content_type === 'quiz' && content.content_data?.correct_answer) {
+      correctValue = content.content_data.correct_answer;
+    }
+    // For exercises, solution is in content_data or reference_answer
+    else if (content.content_type === 'exercise') {
+      if (content.content_data?.solution) {
+        correctValue = content.content_data.solution;
+      } else if (content.reference_answer) {
+        const ref = content.reference_answer;
+        if (typeof ref === 'string') {
+          correctValue = ref;
+        } else if (typeof ref === 'object' && ref !== null) {
+          correctValue = ref.solution || ref.answer || ref.correct_answer || ref.value;
+        }
+      }
     }
 
-    if (typeof ref === 'object' && ref !== null) {
-      const correctValue = ref.correct_answer || ref.solution || ref.answer || ref.value;
+    if (!correctValue) return false;
 
-      if (typeof correctValue === 'string') {
-        return answer.trim().toLowerCase() === correctValue.trim().toLowerCase();
-      }
+    // Compare string answers
+    if (typeof correctValue === 'string') {
+      return answer.trim().toLowerCase() === correctValue.trim().toLowerCase();
+    }
 
-      if (Array.isArray(correctValue)) {
-        const userAnswers = answer.split('|').map((a) => a.trim().toLowerCase());
-        const correctAnswers = (correctValue as string[]).map((a: string) => a.trim().toLowerCase());
-        return (
-          userAnswers.length === correctAnswers.length &&
-          userAnswers.every((a) => correctAnswers.includes(a))
-        );
-      }
+    // Compare multiple select answers
+    if (Array.isArray(correctValue)) {
+      const userAnswers = answer.split('|').map((a) => a.trim().toLowerCase());
+      const correctAnswers = (correctValue as string[]).map((a: string) => a.trim().toLowerCase());
+      return (
+        userAnswers.length === correctAnswers.length &&
+        userAnswers.every((a) => correctAnswers.includes(a))
+      );
     }
 
     return false;

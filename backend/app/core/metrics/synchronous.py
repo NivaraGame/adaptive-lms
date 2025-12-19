@@ -180,50 +180,74 @@ def extract_message_data(
     if hasattr(message, '__dict__'):
         # Message model fields: message_id, dialog_id, sender_type, content, timestamp, extra_data
         # Note: user_id comes from Dialog relationship, not directly on Message
+        extra_data = message.extra_data or {}
+
+        # Extract content_id from new format (content_meta) or old format
+        content_id = None
+        if "content_meta" in extra_data:
+            content_id = extra_data["content_meta"].get("content_id")
+        elif "content_id" in extra_data:
+            content_id = extra_data["content_id"]
+
         message_dict = {
             "message_id": message.message_id,
             "dialog_id": message.dialog_id,
             "user_id": getattr(message.dialog, "user_id", None) if hasattr(message, "dialog") else None,
-            "content_id": message.extra_data.get("content_id") if message.extra_data else None,
+            "content_id": content_id,
             "user_answer": message.content,
             "timestamp": message.timestamp,
             "sender_type": message.sender_type,
-            "extra_data": message.extra_data or {},
+            "extra_data": extra_data,
         }
     else:
         message_dict = message
+
+    extra_data = message_dict.get("extra_data", {})
+
+    # Extract content_id (support both formats)
+    content_id = message_dict.get("content_id")
+    if not content_id:
+        if "content_meta" in extra_data:
+            content_id = extra_data["content_meta"].get("content_id")
+        elif "content_id" in extra_data:
+            content_id = extra_data["content_id"]
 
     extracted = {
         "message_id": message_dict.get("message_id"),
         "user_id": message_dict.get("user_id"),
         "dialog_id": message_dict.get("dialog_id"),
-        "content_id": message_dict.get("content_id") or message_dict.get("extra_data", {}).get("content_id"),
+        "content_id": content_id,
         "user_answer": message_dict.get("user_answer", message_dict.get("content")),
         "user_response_time": message_dict.get("timestamp"),
         "attempts": message_dict.get("extra_data", {}).get("attempts", 1),
     }
 
-    # Check if content_delivery_time is in extra_data (preferred method)
-    extra_data = message_dict.get("extra_data", {})
+    # Extract from new content_answer format
+    if "content_meta" in extra_data:
+        content_meta = extra_data["content_meta"]
+        extracted["topic"] = content_meta.get("topic")
+
+    # Extract from new answer_meta format
+    if "answer_meta" in extra_data:
+        answer_meta = extra_data["answer_meta"]
+        extracted["is_correct"] = answer_meta.get("is_correct")
+        extracted["response_time_seconds"] = answer_meta.get("response_time_seconds")
+
+    # Legacy support: old formats
     if "content_delivery_time" in extra_data:
-        # Parse datetime string if needed
         delivery_time = extra_data["content_delivery_time"]
         if isinstance(delivery_time, str):
             from datetime import datetime
             delivery_time = datetime.fromisoformat(delivery_time.replace('Z', '+00:00'))
         extracted["content_delivery_time"] = delivery_time
 
-    # Extract topic from extra_data if available
-    if "topic" in extra_data:
+    if "topic" not in extracted and "topic" in extra_data:
         extracted["topic"] = extra_data["topic"]
 
-    # Extract is_correct from extra_data if available (alternative to computing accuracy)
-    if "is_correct" in extra_data:
+    if "is_correct" not in extracted and "is_correct" in extra_data:
         extracted["is_correct"] = extra_data["is_correct"]
 
-    # Extract response_time_ms from extra_data if available
-    if "response_time_ms" in extra_data:
-        # Convert milliseconds to seconds
+    if "response_time_seconds" not in extracted and "response_time_ms" in extra_data:
         extracted["response_time_seconds"] = extra_data["response_time_ms"] / 1000.0
 
     # Extract content data if provided
